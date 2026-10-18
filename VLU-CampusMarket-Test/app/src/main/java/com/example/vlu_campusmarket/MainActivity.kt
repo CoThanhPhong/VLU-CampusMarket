@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vlu_campusmarket.adapter.ProductAdapter
 import com.example.vlu_campusmarket.auth.LoginActivity
-import com.example.vlu_campusmarket.data.model.product
+import com.example.vlu_campusmarket.data.model.Product
 import com.example.vlu_campusmarket.util.applySystemBarsPadding
 import com.google.firebase.auth.FirebaseAuth
 
@@ -21,7 +21,8 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         val user = FirebaseAuth.getInstance().currentUser
-        if (user == null) { // chưa đăng nhập -> quay về Login
+        if (user == null || !user.isEmailVerified) { // chưa đăng nhập hoặc chưa xác thực email -> quay về Login
+            FirebaseAuth.getInstance().signOut()
             goLogin()
             return
         }
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Dữ liệu mẫu - sau này thay bằng dữ liệu từ ApiService (Retrofit) hoặc Firestore
-    private fun sampleData(): List<product> = listOf(
+    private fun sampleData(): List<Product> = listOf(
         sample("1", "iPhone 12 64GB", 8_500_000.0, "https://picsum.photos/id/1/400/300", "Cơ sở 3"),
         sample("2", "Samsung A54 128GB", 6_200_000.0, "https://picsum.photos/id/20/400/300", "Cơ sở 3"),
         sample("3", "Xiaomi Redmi Note 11", 3_300_000.0, "https://picsum.photos/id/60/400/300", "Cơ sở 3"),
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
     )
 
     private fun sample(id: String, name: String, price: Double, img: String, local: String) =
-        product(
+        Product(
             id = id,
             name = name,
             description = null,

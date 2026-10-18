@@ -10,11 +10,11 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.vlu_campusmarket.R
-import com.example.vlu_campusmarket.data.model.product
+import com.example.vlu_campusmarket.data.model.Product
 import java.text.NumberFormat
 import java.util.Locale
 
-class ProductAdapter(private val items: List<product>) :
+class ProductAdapter(private val items: List<Product>) :
     RecyclerView.Adapter<ProductAdapter.VH>() {
 
     private val vnd: NumberFormat = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"))
@@ -46,12 +46,14 @@ class ProductAdapter(private val items: List<product>) :
 
     override fun onViewRecycled(holder: VH) {
         super.onViewRecycled(holder)
-        Glide.with(holder.imgPhone.context).clear(holder.imgPhone) // dọn request đang dở
+        Glide.with(holder.holderImageContext()).clear(holder.imgPhone) // dọn request đang dở
     }
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
         val imgPhone: ImageView = v.findViewById(R.id.imgPhone)
         val tvTitle: TextView = v.findViewById(R.id.tvTitle)
         val tvPrice: TextView = v.findViewById(R.id.tvPrice)
+
+        fun holderImageContext() = imgPhone.context
     }
 }

@@ -64,12 +64,19 @@ class RegisterActivity : AppCompatActivity() {
             val user = auth.currentUser
             if (user == null) { setLoading(false); return@addOnCompleteListener }
 
-            // Lưu tên hiển thị XONG rồi mới gửi email xác thực & đăng xuất,
-            // tránh signOut() chạy trước khi updateProfile hoàn tất.
+            // Lưu tên hiển thị XONG rồi mới gửi email xác thực & đăng xuất
             user.updateProfile(userProfileChangeRequest { displayName = name })
                 .addOnCompleteListener(this) {
-                    user.sendEmailVerification().addOnCompleteListener(this) {
-                        Toast.makeText(this, R.string.msg_verification_sent, Toast.LENGTH_LONG).show()
+                    user.sendEmailVerification().addOnCompleteListener(this) { sendTask ->
+                        if (sendTask.isSuccessful) {
+                            Toast.makeText(this, R.string.msg_verification_sent, Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(
+                                this,
+                                sendTask.exception?.message ?: getString(R.string.msg_reset_failed),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                         auth.signOut()
                         finish()
                     }
