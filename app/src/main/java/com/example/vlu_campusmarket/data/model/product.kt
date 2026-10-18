@@ -1,6 +1,6 @@
 package com.example.vlu_campusmarket.data.model
 
-data class product (
+data class Product(
     val id: String? = null,
     val name: String,
     val description: String?,
