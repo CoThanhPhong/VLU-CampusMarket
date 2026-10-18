@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">VLU-CampusMarket</string>
+
+    <!-- Login -->
+    <string name="login_title">VLU CampusMarket</string>
+    <string name="hint_student_email">Email sinh viên</string>
+    <string name="hint_password">Mật khẩu</string>
+    <string name="hint_full_name">Họ và tên</string>
+    <string name="hint_confirm_password">Nhập lại mật khẩu</string>
+    <string name="action_login">Đăng nhập</string>
+    <string name="action_forgot_password">Quên mật khẩu?</string>
+    <string name="action_go_register">Chưa có tài khoản? Đăng ký</string>
+    <string name="action_logout">Đăng xuất</string>
+
+    <!-- Register -->
+    <string name="register_title">Đăng ký tài khoản</string>
+    <string name="action_register">Đăng ký</string>
+
+    <!-- Validation / thông báo -->
+    <string name="error_invalid_email">Email sinh viên không hợp lệ</string>
+    <string name="error_email_for_reset">Nhập email để đặt lại mật khẩu</string>
+    <string name="error_password_min">Mật khẩu tối thiểu 6 ký tự</string>
+    <string name="error_name_required">Nhập họ tên</string>
+    <string name="error_password_mismatch">Mật khẩu không khớp</string>
+    <string name="msg_login_failed">Sai email hoặc mật khẩu</string>
+    <string name="msg_verify_email_first">Vui lòng xác thực email trước khi đăng nhập</string>
+    <string name="msg_reset_sent">Đã gửi email đặt lại mật khẩu</string>
+    <string name="msg_reset_failed">Không gửi được email</string>
+    <string name="msg_register_failed">Đăng ký thất bại: %1$s</string>
+    <string name="msg_verification_sent">Đã gửi email xác thực, hãy kiểm tra hộp thư</string>
+
+    <!-- Main -->
+    <string name="greeting">Xin chào, %1$s</string>
+    <string name="price_vnd">%1$s đ</string>
+</resources>
