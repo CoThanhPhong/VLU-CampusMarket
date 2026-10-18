@@ -1,20 +1,70 @@
 package com.example.vlu_campusmarket
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.vlu_campusmarket.adapter.ProductAdapter
+import com.example.vlu_campusmarket.auth.LoginActivity
+import com.example.vlu_campusmarket.data.model.Product
+import com.example.vlu_campusmarket.util.applySystemBarsPadding
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !user.isEmailVerified) { // chưa đăng nhập hoặc chưa xác thực email -> quay về Login
+            FirebaseAuth.getInstance().signOut()
+            goLogin()
+            return
         }
+        setContentView(R.layout.activity_main)
+        findViewById<View>(R.id.main).applySystemBarsPadding()
+
+        val name = user.displayName?.takeIf { it.isNotBlank() } ?: user.email.orEmpty()
+        findViewById<TextView>(R.id.tvHello).text = getString(R.string.greeting, name)
+
+        findViewById<View>(R.id.btnLogout).setOnClickListener {
+            FirebaseAuth.getInstance().signOut()
+            goLogin()
+        }
+
+        val rv = findViewById<RecyclerView>(R.id.rvProducts)
+        rv.layoutManager = GridLayoutManager(this, 2)
+        rv.adapter = ProductAdapter(sampleData())
     }
+
+    private fun goLogin() {
+        startActivity(Intent(this, LoginActivity::class.java))
+        finish()
+    }
+
+    // Dữ liệu mẫu - sau này thay bằng dữ liệu từ ApiService (Retrofit) hoặc Firestore
+    private fun sampleData(): List<Product> = listOf(
+        sample("1", "iPhone 12 64GB", 8_500_000.0, "https://picsum.photos/id/1/400/300", "Cơ sở 3"),
+        sample("2", "Samsung A54 128GB", 6_200_000.0, "https://picsum.photos/id/20/400/300", "Cơ sở 3"),
+        sample("3", "Xiaomi Redmi Note 11", 3_300_000.0, "https://picsum.photos/id/60/400/300", "Cơ sở 3"),
+        sample("4", "OPPO Reno 8", 5_400_000.0, "https://picsum.photos/id/119/400/300", "Cơ sở 1")
+    )
+
+    private fun sample(id: String, name: String, price: Double, img: String, local: String) =
+        Product(
+            id = id,
+            name = name,
+            description = null,
+            price = price,
+            amount = 1,
+            local = local,
+            img = img,
+            startDate = "2026-10-18",
+            deviceType = "mobile"
+        )
 }
