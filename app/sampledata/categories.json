@@ -1,0 +1,9 @@
+[
+  { "id": "cat_1", "name": "Điện thoại", "icon":
+  "phone-portrait-outline" },
+  { "id": "cat_2", "name": "Máy tính bảng", "icon":
+  "tablet-portrait-outline" },
+  { "id": "cat_3", "name": "Laptop", "icon": "laptop-outline" },
+  { "id": "cat_4", "name": "Phụ kiện", "icon":
+  "battery-charging-outline" }
+]
