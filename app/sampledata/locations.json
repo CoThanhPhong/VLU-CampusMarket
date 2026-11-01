@@ -1,0 +1,6 @@
+[
+  { "id": "cs3_blockA", "name": "Sảnh Block A - Cơ sở 3" },
+  { "id": "cs3_canteen", "name": "Canteen Tầng 4 Block G - Cơ sở 3"},
+  { "id": "cs3_library", "name": "Thư viện - Cơ sở 3" },
+  { "id": "cs1_hall", "name": "Sảnh chính - Cơ sở 1" }
+]

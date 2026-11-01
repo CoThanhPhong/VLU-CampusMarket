@@ -1,0 +1,79 @@
+{
+  "products": [
+    {
+      "id": "prod_001",
+      "title": "iPhone 13 Pro Max 128GB (Vàng)",
+      "category": "Điện thoại",
+      "brand": "Apple",
+      "price": 11500000,
+      "condition": "97% Trầy xước nhẹ ở viền, pin 84%",
+      "description": "Máy chính chủ mình dùng từ năm nhất, cần lên đời nên pass lại. Bao test tại chỗ cho ae VLU.",
+      "transaction_type": "Bán",
+      "exchange_for": null,
+      "images": [
+        "https://picsum.photos/200/300"
+      ],
+      "seller": {
+        "student_id": "217IT01234",
+        "name": "Nguyễn Văn A",
+        "faculty": "Công nghệ thông tin",
+        "campus": "Cơ sở 3"
+      },
+      "created_at": "2026-10-04T08:30:00Z"
+    },
+    {
+      "id": "prod_002",
+      "title": "iPad Air 4 64GB Wifi kèm Apple Pencil 2",
+      "category": "Máy tính bảng",
+      "brand": "Apple",
+      "price": 9000000,
+      "condition": "99% Đã dán cường lực và có bao da",
+      "description": "Mình dân Thiết kế Đồ họa mua về ghi chép nhưng ít dùng. Muốn đổi sang Macbook Air M1 để làm đồ án, mình bù thêm tiền.",
+      "transaction_type": "Trao đổi",
+      "exchange_for": "Macbook Air M1",
+      "images": [
+        "https://picsum.photos/200/300"
+      ],
+      "seller": {
+        "student_id": "227AD05678",
+        "name": "Trần Thị B",
+        "faculty": "Mỹ thuật và Thiết kế",
+        "campus": "Cơ sở 3"
+      },
+      "created_at": "2026-10-05T02:15:00Z"
+    },
+    {
+      "id": "prod_003",
+      "title": "Sạc dự phòng Anker PowerCore 20000mAh",
+      "category": "Phụ kiện",
+      "brand": "Anker",
+      "price": 350000,
+      "condition": "90% Hơi cũ theo thời gian nhưng sạc rất trâu",
+      "description": "Dư dùng nên để lại cho bạn nào hay học ca tối ở trường cần sạc pin gấp.",
+      "transaction_type": "Bán",
+      "exchange_for": null,
+      "images": [
+        "https://picsum.photos/200/300"
+      ],
+      "seller": {
+        "student_id": "237BA09999",
+        "name": "Lê Hoàng C",
+        "faculty": "Quản trị kinh doanh",
+        "campus": "Cơ sở 1"
+      },
+      "created_at": "2026-10-05T11:00:00Z"
+    }
+  ],
+  "categories": [
+    { "id": "cat_1", "name": "Điện thoại", "icon": "phone-portrait-outline" },
+    { "id": "cat_2", "name": "Máy tính bảng", "icon": "tablet-portrait-outline" },
+    { "id": "cat_3", "name": "Laptop", "icon": "laptop-outline" },
+    { "id": "cat_4", "name": "Phụ kiện", "icon": "battery-charging-outline" }
+  ],
+  "vlu_campuses": [
+    { "id": "cs3_blockA", "name": "Sảnh Block A - Cơ sở 3" },
+    { "id": "cs3_canteen", "name": "Canteen Tầng 4 Block G - Cơ sở 3" },
+    { "id": "cs3_library", "name": "Thư viện - Cơ sở 3" },
+    { "id": "cs1_hall", "name": "Sảnh chính - Cơ sở 1" }
+  ]
+}
