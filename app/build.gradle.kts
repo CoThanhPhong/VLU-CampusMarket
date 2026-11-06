@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation("com.github.ibrahimsn98:NiceBottomBar:2.2")
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
