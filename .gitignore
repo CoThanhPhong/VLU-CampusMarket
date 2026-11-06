@@ -1,45 +1,15 @@
-# Built application files
-*.apk
-*.ap_
-*.aab
-
-# Files for the Dalvik VM
-*.dex
-
-# Java class files
-*.class
-
-# Generated files
-bin/
-gen/
-out/
-build/
-
-# Local configuration file (chứa đường dẫn SDK cá nhân, tuyệt đối không push)
-local.properties
-
-# JetBrains IDEs and Android Studio
-.idea/
-.gradle/
 *.iml
-*.hprof
-.cxx/
-.externalNativeBuild/
-.kotlin/
-captures/
-.navigation/
-
-# Profiler data
-*.prof
-
-# OS specific files
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Firebase / Google Services (Tùy chọn: Nếu bạn không muốn public file cấu hình mật)
-# google-services.json
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
