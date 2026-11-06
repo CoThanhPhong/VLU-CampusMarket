@@ -14,9 +14,6 @@ object RetrofitClient {
     // 1. Dành cho Android Emulator (Máy ảo Android Studio)
     private const val BASE_URL = "http://10.0.2.2:5000/api/"
 
-    // 2. Dành cho Thiết bị thật (Thay bằng IP Wifi máy tính của bạn, VD: 192.168.1.15)
-    // private const val BASE_URL = "http://192.168.1.X:5000/api/"
-
     fun getInstance(context: Context): ApiService {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY

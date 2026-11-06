@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.cardview)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.firebase.crashlytics.buildtools)
@@ -52,6 +53,8 @@ dependencies {
     // OkHttp và Logging Interceptor (dùng để log mạng và đính kèm Cookie)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+
+    implementation(libs.coil)
 
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
