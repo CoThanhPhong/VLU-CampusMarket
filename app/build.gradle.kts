@@ -45,6 +45,14 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.lifecycle.livedata.ktx)
 
+    // Retrofit và Gson Converter
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+
+    // OkHttp và Logging Interceptor (dùng để log mạng và đính kèm Cookie)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
