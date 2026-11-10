@@ -26,6 +26,11 @@ interface ApiService {
         @Body request: UserIdRequest
     ): Response<UserDetailResponse>
 
+    @HTTP(method = "DELETE", path = "auth/user", hasBody = true)
+    suspend fun deleteUser(
+        @Body request: UserIdRequest
+    ): Response<BaseApiResponse>
+
 
     // ==========================================
     // 2. CART ROUTES (cart_2.js)
@@ -59,10 +64,18 @@ interface ApiService {
     @GET("orders/g")
     suspend fun getMyOrders(): Response<OrderListResponse>
 
+    @GET("orders/all")
+    suspend fun getAllOrders(): Response<OrderListResponse>
+
     @PUT("orders/cancel")
     suspend fun cancelOrder(
         @Body request: CancelOrderRequest
     ): Response<CancelOrderResponse>
+
+    @PUT("orders/u")
+    suspend fun updateOrderStatus(
+        @Body request: UpdateOrderStatusRequest
+    ): Response<OrderCreateResponse>
 
 
     // ==========================================
@@ -74,14 +87,13 @@ interface ApiService {
         @Body products: List<ProductModel>
     ): Response<ProductCreateResponse>
 
-    // Sử dụng @HTTP với hasBody = true vì GET request bên Node.js có nhận req.body[cite: 11, 15]
-    @HTTP(method = "GET", path = "products/g", hasBody = true)
+    @GET("products/g")
     suspend fun getProductById(
-        @Body request: ProductIdRequest?
+        @Query("id") id: String?
     ): Response<ProductSingleResponse>
 
     @GET("products/g")
-    suspend fun getAllProducts(): ProductListResponse
+    suspend fun getAllProducts(): Response<ProductListResponse>
 
     @PUT("products/u")
     suspend fun updateProduct(

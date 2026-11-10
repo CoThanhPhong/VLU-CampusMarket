@@ -17,6 +17,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -68,6 +69,8 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     implementation(libs.coil)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    ksp("com.github.bumptech.glide:compiler:4.16.0")
 
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)

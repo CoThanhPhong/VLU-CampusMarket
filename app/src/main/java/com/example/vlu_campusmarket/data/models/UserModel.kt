@@ -1,17 +1,21 @@
 package com.example.vlu_campusmarket.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class UserProfile(
-    val id: String,
-    val name: String,
-    val bio: String?,
-    val avatar: String?,
-    val phone: String
+    @SerializedName(value = "id", alternate = ["_id"])
+    val id: String = "",
+    val name: String = "Sinh viên VLU",
+    val bio: String? = null,
+    val avatar: String? = null,
+    val phone: String = ""
 )
 
 data class UserModel(
-    val id: String,
-    val mssv: String,
-    val email: String,
-    val role: String,
-    val profile: UserProfile?
+    @SerializedName(value = "id", alternate = ["_id"])
+    val id: String = "",
+    val mssv: String = "",
+    val email: String = "",
+    val role: String = "user",
+    val profile: UserProfile? = null
 )

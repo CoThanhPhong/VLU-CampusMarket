@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -18,6 +19,7 @@ import com.example.vlu_campusmarket.data.remote.RetrofitClient
 import com.example.vlu_campusmarket.data.repository.ProductRepository
 import com.example.vlu_campusmarket.databinding.FragmentHomeBinding
 import com.example.vlu_campusmarket.ui.adapter.ProductAdapter
+import com.example.vlu_campusmarket.ui.product.ProductDetailFragment
 import com.example.vlu_campusmarket.ui.product.ProductViewModel
 import kotlinx.coroutines.launch
 
@@ -64,7 +66,13 @@ class HomeFragment : Fragment() {
                 viewModel.fetchUserNameIfNeeded(userId)
             },
             onAuthorClick = { userId ->
-                // Xử lý chuyển hướng sang trang Profile cá nhân tại đây nếu cần
+                Toast.makeText(requireContext(), "Mã sinh viên đăng bài: $userId", Toast.LENGTH_SHORT).show()
+            },
+            onProductClick = { product ->
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentOutlet, ProductDetailFragment.newInstance(product))
+                    .addToBackStack(null)
+                    .commit()
             }
         )
 
@@ -103,7 +111,6 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                // Lắng nghe danh sách sản phẩm, tự động cập nhật số lượng (count) vào tvTitle
                 launch {
                     viewModel.filteredProducts.collect { products ->
                         productAdapter.submitList(products)
@@ -111,17 +118,15 @@ class HomeFragment : Fragment() {
                     }
                 }
 
-                // Lắng nghe trạng thái làm mới (Pull-to-Refresh)
                 launch {
                     viewModel.isRefreshing.collect { refreshing ->
                         binding.swipeRefreshLayout.isRefreshing = refreshing
                     }
                 }
 
-                // Cập nhật lại adapter khi có tên người dùng mới tải về từ API
                 launch {
-                    viewModel.userNames.collect { _ ->
-                        productAdapter.notifyDataSetChanged()
+                    viewModel.userNames.collect { names ->
+                        productAdapter.updateUserNames(names)
                     }
                 }
             }

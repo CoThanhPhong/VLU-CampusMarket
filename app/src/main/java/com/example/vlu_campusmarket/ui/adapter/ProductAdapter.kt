@@ -7,29 +7,49 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vlu_campusmarket.data.models.ProductModel
 import com.example.vlu_campusmarket.databinding.ProductItemBinding
+import com.example.vlu_campusmarket.utils.loadImageWithGlide
+import java.text.DecimalFormat
 
 class ProductAdapter(
-    private val userNamesMap: Map<String, String>,
+    private var userNamesMap: Map<String, String> = emptyMap(),
     private val onRequestFetchUser: (String) -> Unit,
-    private val onAuthorClick: (String) -> Unit
+    private val onAuthorClick: (String) -> Unit,
+    private val onProductClick: ((ProductModel) -> Unit)? = null
 ) : ListAdapter<ProductModel, ProductAdapter.ProductViewHolder>(ProductDiffCallback()) {
+
+    private val formatter = DecimalFormat("#,###")
+
+    fun updateUserNames(names: Map<String, String>) {
+        this.userNamesMap = names
+        notifyDataSetChanged()
+    }
 
     inner class ProductViewHolder(val binding: ProductItemBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(product: ProductModel) {
             binding.tvProductName.text = product.name
-            binding.tvProductPrice.text = "${product.price} \u20ab"
+            binding.tvProductPrice.text = "${formatter.format(product.price)} \u20ab"
+            binding.tvDeviceType.text = product.deviceType
+            binding.tvProductLocal.text = if (product.local.startsWith("Cơ sở")) product.local else "Cơ sở: ${product.local}"
+            binding.tvProductAmount.text = "Kho: ${product.amount}"
 
-            // Hiển thị tên từ cache, nếu chưa có thì hiện tạm ID và gọi fetch
-            val authorName = userNamesMap[product.author]
+            // Load ảnh sản phẩm sử dụng Glide
+            binding.imgProduct.loadImageWithGlide(product.imageUrl)
+
+            // Hiển thị tên người đăng từ cache
+            val authorName = userNamesMap[product.authorId]
             if (authorName != null) {
-                binding.tvAuthor.text = authorName
+                binding.tvAuthor.text = "👤 $authorName"
             } else {
-                binding.tvAuthor.text = "Người đăng: ${product.author.take(6)}..."
-                onRequestFetchUser(product.author)
+                binding.tvAuthor.text = "👤 ${product.authorId.take(6)}..."
+                onRequestFetchUser(product.authorId)
             }
 
             binding.tvAuthor.setOnClickListener {
-                onAuthorClick(product.author)
+                onAuthorClick(product.authorId)
+            }
+
+            binding.root.setOnClickListener {
+                onProductClick?.invoke(product)
             }
         }
     }

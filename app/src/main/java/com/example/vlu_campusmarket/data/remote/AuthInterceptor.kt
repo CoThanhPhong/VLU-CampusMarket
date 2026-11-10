@@ -20,7 +20,18 @@ class AuthInterceptor(private val context: Context) : Interceptor {
         // Nếu có cookie, tiến hành add vào Header của request
         val requestBuilder = originalRequest.newBuilder()
         loggedInUser?.cookie?.let { cookieValue ->
-            requestBuilder.addHeader("Cookie", cookieValue)
+            val cleanCookie = cookieValue.substringBefore(";")
+            requestBuilder.addHeader("Cookie", cleanCookie)
+
+            // Trích xuất token JWT để gửi kèm Authorization Bearer header (phòng trường hợp backend check Header thay vì Cookie)
+            val tokenValue = if (cleanCookie.startsWith("token=")) {
+                cleanCookie.substringAfter("token=")
+            } else {
+                cleanCookie
+            }
+            if (tokenValue.isNotBlank() && tokenValue != "temporary_session" && tokenValue != "persistent_session") {
+                requestBuilder.addHeader("Authorization", "Bearer $tokenValue")
+            }
         }
 
         return chain.proceed(requestBuilder.build())

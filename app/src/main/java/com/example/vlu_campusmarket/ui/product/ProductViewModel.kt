@@ -13,7 +13,6 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private val _selectedCategory = MutableStateFlow("ALL")
     private val _searchQuery = MutableStateFlow("")
 
-    // Bộ nhớ cache tạm thời ánh xạ từ userId sang tên người dùng
     private val userCache = mutableMapOf<String, String>()
 
     private val _userNames = MutableStateFlow(mapOf<String, String>())
@@ -22,7 +21,6 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    // Danh sách sản phẩm sau khi lọc danh mục & tìm kiếm
     val filteredProducts: StateFlow<List<ProductModel>> = combine(
         _allProducts,
         _selectedCategory,
@@ -37,15 +35,13 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
     init {
         observeLocalDatabase()
+        refreshData()
     }
 
     private fun observeLocalDatabase() {
         viewModelScope.launch {
             repository.localProducts.collect { list ->
                 _allProducts.value = list
-                if (list.isEmpty()) {
-                    refreshData()
-                }
             }
         }
     }
@@ -58,13 +54,12 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         }
     }
 
-    // Lấy tên người dùng dựa theo cấu trúc profile?.name của UserModel
     fun fetchUserNameIfNeeded(userId: String) {
         if (userId.isBlank() || userCache.containsKey(userId)) return
 
         viewModelScope.launch {
             val user = repository.getUserDetail(userId)
-            val authorName = user?.profile?.name ?: "Người dùng"
+            val authorName = user?.profile?.name ?: "Sinh viên VLU"
             userCache[userId] = authorName
             _userNames.value = userCache.toMap()
         }

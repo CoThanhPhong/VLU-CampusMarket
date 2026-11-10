@@ -35,6 +35,11 @@ data class CancelOrderResponse(
     val data: OrderModel
 )
 
+data class UpdateOrderStatusRequest(
+    val orderId: String,
+    val orderStatus: String
+)
+
 data class BaseApiResponse(
     val success: Boolean,
     val message: String
