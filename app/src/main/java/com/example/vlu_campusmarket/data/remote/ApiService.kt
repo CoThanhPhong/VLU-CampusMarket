@@ -68,6 +68,7 @@ interface ApiService {
     // ==========================================
     // 5. PRODUCT ROUTES (productRoutes.js)
     // ==========================================
+
     @POST("products/c")
     suspend fun createProducts(
         @Body products: List<ProductModel>
@@ -77,7 +78,10 @@ interface ApiService {
     @HTTP(method = "GET", path = "products/g", hasBody = true)
     suspend fun getProductById(
         @Body request: ProductIdRequest?
-    ): Response<ProductListResponse>
+    ): Response<ProductSingleResponse>
+
+    @GET("products/g")
+    suspend fun getAllProducts(): ProductListResponse
 
     @PUT("products/u")
     suspend fun updateProduct(

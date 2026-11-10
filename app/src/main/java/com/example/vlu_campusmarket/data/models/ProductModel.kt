@@ -8,8 +8,8 @@ data class ProductModel(
     val amount: Int,
     val local: String,
     val img: String,
-    val startDate: String,
-    val status: String,
+    val startDate: String?,
+    val status: String?,
     val deviceType: String,
     val endDate: String?,
     val author: String

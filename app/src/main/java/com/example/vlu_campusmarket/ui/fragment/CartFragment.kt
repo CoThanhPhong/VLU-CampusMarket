@@ -1,4 +1,4 @@
-package com.example.vlu_campusmarket.ui.main
+package com.example.vlu_campusmarket.ui.fragment
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,13 +7,13 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.vlu_campusmarket.R
 
-class HomeFragment : Fragment() {
+class CartFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Trả về layout tương ứng của trang chủ
-        return inflater.inflate(R.layout.fragment_home, container, false)
+        // Trả về layout giỏ hàng (Bạn có thể tạo file fragment_cart.xml sau)
+        return inflater.inflate(R.layout.fragment_cart, container, false)
     }
 }

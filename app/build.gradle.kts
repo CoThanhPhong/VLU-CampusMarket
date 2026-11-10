@@ -33,10 +33,22 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    sourceSets {
+        getByName("main") {
+            res.srcDirs(
+                "src/main/res/layout/fragment",
+                "src/main/res/layout/product",
+                "src/main/res" // Bắt buộc giữ lại dòng này để nhận các tài nguyên mặc định khác (values, drawable...)
+            )
+        }
+    }
 }
 
 dependencies {
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.github.ibrahimsn98:NiceBottomBar:2.2")
+
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

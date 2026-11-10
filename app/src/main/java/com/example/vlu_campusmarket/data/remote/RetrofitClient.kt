@@ -20,8 +20,7 @@ object RetrofitClient {
         }
 
         val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor(context)) // Tự động đính kèm Cookie từ Room Database
-            .addInterceptor(logging)
+            .cookieJar(SessionCookieJar())
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

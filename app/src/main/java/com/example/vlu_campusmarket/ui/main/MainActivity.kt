@@ -5,6 +5,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.vlu_campusmarket.R
 import com.example.vlu_campusmarket.databinding.ActivityMainBinding
+import com.example.vlu_campusmarket.ui.fragment.CartFragment
+import com.example.vlu_campusmarket.ui.fragment.CreatePostFragment
+import com.example.vlu_campusmarket.ui.fragment.HomeFragment
+import com.example.vlu_campusmarket.ui.fragment.MenuFragment
+import com.example.vlu_campusmarket.ui.fragment.OrderFragment
 
 class MainActivity : AppCompatActivity() {
 
