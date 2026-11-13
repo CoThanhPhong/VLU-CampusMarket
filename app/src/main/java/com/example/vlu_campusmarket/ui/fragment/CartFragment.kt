@@ -24,6 +24,7 @@ import com.example.vlu_campusmarket.data.repository.OrderRepository
 import com.example.vlu_campusmarket.databinding.FragmentCartBinding
 import com.example.vlu_campusmarket.ui.adapter.CartAdapter
 import com.example.vlu_campusmarket.ui.cart.CartViewModel
+import com.example.vlu_campusmarket.utils.SessionManager
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
@@ -100,8 +101,18 @@ class CartFragment : Fragment() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_checkout_shipping, null)
         val etFullName = dialogView.findViewById<EditText>(R.id.etFullName)
         val etPhone = dialogView.findViewById<EditText>(R.id.etPhone)
-        val etAddress = dialogView.findViewById<EditText>(R.id.etAddress)
         val etCampus = dialogView.findViewById<EditText>(R.id.etCampus)
+
+        // Tự động load thông tin tên và SĐT của user trong session
+        val sessionUser = SessionManager(requireContext()).fetchUser()
+        if (sessionUser != null) {
+            if (etFullName != null && etFullName.text.isEmpty()) {
+                etFullName.setText(sessionUser.profile?.name ?: "")
+            }
+            if (etPhone != null && etPhone.text.isEmpty()) {
+                etPhone.setText(sessionUser.profile?.phone ?: "")
+            }
+        }
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Xác nhận Đặt hàng")
@@ -115,10 +126,9 @@ class CartFragment : Fragment() {
             btnPositive.setOnClickListener {
                 val name = etFullName.text.toString().trim()
                 val phone = etPhone.text.toString().trim()
-                val address = etAddress.text.toString().trim()
                 val campus = etCampus.text.toString().trim().ifEmpty { "Cơ sở 1" }
 
-                if (name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+                if (name.isEmpty() || phone.isEmpty()) {
                     Toast.makeText(requireContext(), "Vui lòng điền đầy đủ thông tin giao hàng", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
@@ -126,7 +136,6 @@ class CartFragment : Fragment() {
                 val shippingInfo = ShippingInfoModel(
                     fullName = name,
                     phone = phone,
-                    address = address,
                     local = campus
                 )
 

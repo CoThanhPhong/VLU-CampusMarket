@@ -43,7 +43,7 @@
             app:layout_constraintTop_toTopOf="@id/imgProduct"
             app:layout_constraintStart_toStartOf="@id/imgProduct" />
 
-        <!-- 2. Tên sản phẩm -->
+        <!-- 2. Tên sản phẩm (Cố định hiển thị đúng 1 dòng, dài quá hiện ...) -->
         <TextView
             android:id="@+id/tvProductName"
             android:layout_width="0dp"
@@ -51,7 +51,8 @@
             android:text="Tên thiết bị sản phẩm sinh viên VLU"
             android:textSize="13sp"
             android:textColor="#1E293B"
-            android:maxLines="2"
+            android:maxLines="1"
+            android:singleLine="true"
             android:ellipsize="end"
             android:layout_marginHorizontal="8dp"
             android:layout_marginTop="8dp"
@@ -124,7 +125,7 @@
                 android:textColor="#64748B" />
         </LinearLayout>
 
-        <!-- 5. Thông tin Tác giả (Avatar + Tên) -->
+        <!-- 5. Thông tin Tác giả (Avatar viền đỏ chuẩn bằng MaterialCardView + Tên) -->
         <LinearLayout
             android:id="@+id/layoutAuthorContainer"
             android:layout_width="0dp"
@@ -139,14 +140,23 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- Avatar tác giả -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/imgAuthorAvatar"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_launcher_foreground"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+            <!-- Avatar tác giả với viền đỏ chuẩn hoàn hảo không bị vát góc -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                app:cardCornerRadius="11dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1.5dp"
+                app:strokeColor="#E11D48"
+                app:cardBackgroundColor="@android:color/transparent">
+
+                <ImageView
+                    android:id="@+id/imgAuthorAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_user_profile" />
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Tên tác giả -->
             <TextView

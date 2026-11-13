@@ -1,11 +1,17 @@
 package com.example.vlu_campusmarket.ui.fragment
 
-import android.content.Intent
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -19,7 +25,6 @@ import com.example.vlu_campusmarket.data.local.AppDatabase
 import com.example.vlu_campusmarket.data.remote.RetrofitClient
 import com.example.vlu_campusmarket.databinding.FragmentProfileBinding
 import com.example.vlu_campusmarket.ui.adapter.ProductAdapter
-import com.example.vlu_campusmarket.ui.login.LoginActivity
 import com.example.vlu_campusmarket.ui.product.ProductDetailFragment
 import com.example.vlu_campusmarket.ui.profile.ProfileViewModel
 import com.example.vlu_campusmarket.utils.SessionManager
@@ -34,15 +39,55 @@ class ProfileFragment : Fragment() {
     private lateinit var productAdapter: ProductAdapter
     private lateinit var sessionManager: SessionManager
 
+    private var editAvatarBase64: String? = null
+    private var editAvatarImageView: ImageView? = null
+
+    companion object {
+        private const val ARG_USER_ID = "arg_user_id"
+
+        fun newInstance(userId: String): ProfileFragment {
+            val fragment = ProfileFragment()
+            val args = Bundle()
+            args.putString(ARG_USER_ID, userId)
+            fragment.arguments = args
+            return fragment
+        }
+    }
+
+    private val pickAvatarLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            editAvatarBase64 = uriToBase64(requireContext(), uri)
+            editAvatarImageView?.loadImageWithGlide(editAvatarBase64, placeholderRes = R.drawable.ic_user_profile, maxWidth = 200, maxHeight = 200)
+        }
+    }
+
+    private fun uriToBase64(context: Context, uri: Uri): String? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+            if (bytes != null) {
+                val base64String = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                "data:image/jpeg;base64,$base64String"
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     private val viewModel: ProfileViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val context = requireContext()
                 val db = AppDatabase.getDatabase(context)
                 val apiService = RetrofitClient.getInstance(context)
+                val targetUserId = arguments?.getString(ARG_USER_ID)
 
                 @Suppress("UNCHECKED_CAST")
-                return ProfileViewModel(db.userDao(), apiService) as T
+                return ProfileViewModel(db.userDao(), apiService, targetUserId, db.productDao()) as T
             }
         }
     }
@@ -62,21 +107,63 @@ class ProfileFragment : Fragment() {
 
         setupRecyclerView()
 
-        // 1. Load nhanh thông tin từ Session đã lưu ngay khi mở fragment
-        loadUserDataFromSession()
-
-        // 2. Xử lý sự kiện Đăng xuất
-        binding.btnLogout.setOnClickListener {
-            sessionManager.logout()
-            viewModel.logout {
-                Toast.makeText(requireContext(), "Đã đăng xuất", Toast.LENGTH_SHORT).show()
-                val intent = Intent(requireContext(), LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+        val targetUserId = arguments?.getString(ARG_USER_ID)
+        if (targetUserId.isNullOrEmpty()) {
+            loadUserDataFromSession()
+            binding.btnEditProfile.visibility = View.VISIBLE
+            binding.btnEditProfile.setOnClickListener {
+                showEditProfileDialog()
             }
+        } else {
+            binding.btnEditProfile.visibility = View.GONE
         }
 
         observeViewModel()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshProfileData()
+    }
+
+    private fun showEditProfileDialog() {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_profile, null)
+        val etName = dialogView.findViewById<EditText>(R.id.etEditName)
+        val etPhone = dialogView.findViewById<EditText>(R.id.etEditPhone)
+        val etBio = dialogView.findViewById<EditText>(R.id.etEditBio)
+        val ivAvatar = dialogView.findViewById<ImageView>(R.id.ivEditAvatar)
+
+        editAvatarImageView = ivAvatar
+        editAvatarBase64 = null
+
+        val currentUserDetail = viewModel.userDetail.value
+        val currentProfile = currentUserDetail?.profile
+        etName.setText(currentProfile?.name ?: "")
+        etPhone.setText(currentProfile?.phone ?: "")
+        etBio.setText(currentProfile?.bio ?: "")
+        ivAvatar.loadImageWithGlide(currentProfile?.avatar, placeholderRes = R.drawable.ic_user_profile, maxWidth = 200, maxHeight = 200)
+
+        ivAvatar.setOnClickListener {
+            pickAvatarLauncher.launch("image/*")
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Chỉnh sửa hồ sơ cá nhân")
+            .setView(dialogView)
+            .setPositiveButton("Lưu") { _, _ ->
+                val name = etName.text.toString().trim()
+                val phone = etPhone.text.toString().trim()
+                val bio = etBio.text.toString().trim()
+
+                viewModel.updateProfile(name, phone, bio, editAvatarBase64) { success, msg ->
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    if (success) {
+                        loadUserDataFromSession()
+                    }
+                }
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
     }
 
     private fun setupRecyclerView() {
@@ -99,22 +186,18 @@ class ProfileFragment : Fragment() {
     private fun loadUserDataFromSession() {
         val userSession = sessionManager.fetchUser()
 
-        // Kiểm tra an toàn chống crash
         if (userSession != null) {
-            // Gán thông tin tài khoản cơ bản từ UserModel
             binding.tvMssv.text = "MSSV: ${userSession.mssv.ifEmpty { "---" }}"
             binding.tvEmail.text = "Email: ${userSession.email.ifEmpty { "---" }}"
             binding.tvUserRole.text = userSession.role.uppercase()
 
-            // Gán thông tin chi tiết từ UserProfile bên trong
             userSession.profile?.let { profile ->
                 binding.tvUserName.text = profile.name.ifEmpty { "Sinh viên VLU" }
                 binding.tvPhone.text = "Số điện thoại: ${profile.phone.ifEmpty { "Chưa cập nhật" }}"
                 binding.tvBio.text = "Tiểu sử: ${profile.bio ?: "Chưa có tiểu sử"}"
 
-                // Chuẩn hóa URL avatar tránh lỗi thiếu domain từ server Node.js
-                val fixedAvatarUrl = getAbsoluteUrl(profile.avatar)
-                binding.imgAvatar.loadImageWithGlide(fixedAvatarUrl)
+                val fixedAvatarUrl = RetrofitClient.getFullImageUrl(profile.avatar)
+                binding.imgAvatar.loadImageWithGlide(fixedAvatarUrl, placeholderRes = R.drawable.ic_user_profile)
             }
         }
     }
@@ -125,7 +208,8 @@ class ProfileFragment : Fragment() {
 
                 launch {
                     viewModel.currentUser.collect { user ->
-                        if (user != null) {
+                        val targetUserId = arguments?.getString(ARG_USER_ID)
+                        if (user != null && targetUserId.isNullOrEmpty()) {
                             binding.tvMssv.text = "MSSV: ${user.mssv}"
                             binding.tvEmail.text = "Email: ${user.email}"
                             binding.tvUserRole.text = user.role.uppercase()
@@ -136,14 +220,17 @@ class ProfileFragment : Fragment() {
                 launch {
                     viewModel.userDetail.collect { detail ->
                         if (detail != null) {
+                            binding.tvMssv.text = "MSSV: ${detail.mssv}"
+                            binding.tvEmail.text = "Email: ${detail.email}"
+                            binding.tvUserRole.text = detail.role.uppercase()
+
                             val profile = detail.profile
                             binding.tvUserName.text = profile?.name ?: "Sinh viên VLU"
                             binding.tvPhone.text = "Số điện thoại: ${profile?.phone ?: "Chưa cập nhật"}"
                             binding.tvBio.text = "Tiểu sử: ${profile?.bio ?: "Chưa có tiểu sử"}"
 
-                            // Chuẩn hóa và load ảnh đại diện qua Glide
-                            val fixedAvatarUrl = getAbsoluteUrl(profile?.avatar)
-                            binding.imgAvatar.loadImageWithGlide(fixedAvatarUrl)
+                            val fixedAvatarUrl = RetrofitClient.getFullImageUrl(profile?.avatar)
+                            binding.imgAvatar.loadImageWithGlide(fixedAvatarUrl, placeholderRes = R.drawable.ic_user_profile)
                         }
                     }
                 }
@@ -151,38 +238,10 @@ class ProfileFragment : Fragment() {
                 launch {
                     viewModel.userProducts.collect { products ->
                         productAdapter.submitList(products)
+                        binding.tvMyProductsTitle.text = "Sản phẩm của tôi (${products.size})"
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Chuyển đổi đường dẫn ảnh tương đối (VD: /uploads/avatar.jpg) thành tuyệt đối (VD: http://10.0.2.2:5000/uploads/avatar.jpg)
-     */
-    private fun getAbsoluteUrl(path: String?): String? {
-        if (path.isNullOrEmpty()) return null
-
-        var fixedPath = path
-
-        // 1. Nếu là URL từ DiceBear dạng SVG, chuyển sang PNG để Glide đọc được trực tiếp
-        if (fixedPath.contains("api.dicebear.com") && fixedPath.contains(".svg")) {
-            fixedPath = fixedPath.replace(".svg", ".png")
-        }
-
-        // 2. Thay thế khoảng trắng bằng %20 để tránh lỗi URL malformed
-        fixedPath = fixedPath.replace(" ", "%20")
-
-        // 3. Xử lý đường dẫn tuyệt đối hoặc tương đối với server Node.js
-        if (fixedPath.startsWith("http://") || fixedPath.startsWith("https://")) {
-            return fixedPath
-        }
-
-        val baseUrl = "http://10.0.2.2:5000/"
-        return if (fixedPath.startsWith("/")) {
-            baseUrl.removeSuffix("/") + fixedPath
-        } else {
-            "$baseUrl/$fixedPath"
         }
     }
 

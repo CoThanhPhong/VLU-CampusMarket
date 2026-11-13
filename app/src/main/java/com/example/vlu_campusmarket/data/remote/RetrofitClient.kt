@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // 💡 Cấu hình BASE_URL tự động nhận diện Máy ảo (Emulator) và Máy thật (Physical Device)
+    // Đường dẫn IP của Máy ảo (Android Emulator)
     private const val EMULATOR_BASE_URL = "http://10.0.2.2:5000/api/"
     private const val EMULATOR_HOST = "http://10.0.2.2:5000"
 
@@ -39,15 +39,31 @@ object RetrofitClient {
     @Volatile
     private var instance: ApiService? = null
 
+    @Volatile
+    var cookieJarInstance: SessionCookieJar? = null
+        private set
+
+    fun clearCookies() {
+        cookieJarInstance?.clear()
+    }
+
     fun getInstance(context: Context): ApiService {
+        val appContext = context.applicationContext
+        if (cookieJarInstance == null) {
+            synchronized(this) {
+                if (cookieJarInstance == null) {
+                    cookieJarInstance = SessionCookieJar(appContext)
+                }
+            }
+        }
         return instance ?: synchronized(this) {
             val logging = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             }
 
             val okHttpClient = OkHttpClient.Builder()
-                .cookieJar(SessionCookieJar())
-                .addInterceptor(AuthInterceptor(context.applicationContext))
+                .cookieJar(cookieJarInstance!!)
+                .addInterceptor(AuthInterceptor(appContext))
                 .addInterceptor(logging)
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -69,20 +85,27 @@ object RetrofitClient {
         
         var cleanPath = imagePath.replace("\\", "/")
 
+        // 1. Chuyển đổi SVG từ DiceBear sang PNG để Glide đọc được trực tiếp
+        if (cleanPath.contains("api.dicebear.com")) {
+            cleanPath = cleanPath.replace("/svg?", "/png?").replace("/svg", "/png").replace(".svg", ".png")
+        }
+
+        // 2. Thay thế khoảng trắng bằng %20 để tránh lỗi URL malformed
+        cleanPath = cleanPath.replace(" ", "%20")
+
         if (cleanPath.contains("localhost:5000")) {
-            return cleanPath.replace("localhost:5000", if (isEmulator) "10.0.2.2:5000" else PHYSICAL_DEVICE_IP)
+            cleanPath = cleanPath.replace("http://localhost:5000", SERVER_HOST)
+                .replace("https://localhost:5000", SERVER_HOST)
         }
-        if (cleanPath.contains("127.0.0.1:5000")) {
-            return cleanPath.replace("127.0.0.1:5000", if (isEmulator) "10.0.2.2:5000" else PHYSICAL_DEVICE_IP)
-        }
-
-        if (cleanPath.startsWith("http://") || cleanPath.startsWith("https://") || cleanPath.startsWith("data:image")) {
-            return cleanPath
+        if (cleanPath.contains("10.0.2.2:5000") && !isEmulator) {
+            cleanPath = cleanPath.replace("http://10.0.2.2:5000", SERVER_HOST)
+                .replace("https://10.0.2.2:5000", SERVER_HOST)
         }
 
-        if (!cleanPath.startsWith("/")) {
-            cleanPath = "/$cleanPath"
+        return when {
+            cleanPath.startsWith("http://") || cleanPath.startsWith("https://") -> cleanPath
+            cleanPath.startsWith("/") -> "$SERVER_HOST$cleanPath"
+            else -> "$SERVER_HOST/$cleanPath"
         }
-        return "$SERVER_HOST$cleanPath"
     }
 }

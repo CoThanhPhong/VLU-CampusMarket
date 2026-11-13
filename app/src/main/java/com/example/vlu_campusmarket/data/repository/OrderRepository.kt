@@ -30,8 +30,20 @@ class OrderRepository(
                 OrderModel(
                     _id = entity.id,
                     user = entity.userId,
-                    orderItems = entity.orderItems.map { OrderItemModel(it.product, it.quantity, it.price, it.local) },
-                    shippingInfo = ShippingInfoModel(entity.shippingInfo.fullName, entity.shippingInfo.phone, entity.shippingInfo.address, entity.shippingInfo.local),
+                    orderItems = entity.orderItems.map { 
+                        OrderItemModel(
+                            product = mapOf(
+                                "_id" to it.product,
+                                "name" to (it.productName ?: ""),
+                                "img" to (it.productImg ?: ""),
+                                "author" to mapOf("profile" to mapOf("name" to (it.authorName ?: "")))
+                            ),
+                            quantity = it.quantity,
+                            price = it.price,
+                            local = it.local
+                        ) 
+                    },
+                    shippingInfo = ShippingInfoModel(entity.shippingInfo.fullName, entity.shippingInfo.phone, entity.shippingInfo.local),
                     paymentMethod = entity.paymentMethod,
                     totalPrice = entity.totalPrice,
                     orderStatus = entity.orderStatus,
@@ -52,8 +64,18 @@ class OrderRepository(
                     val entity = OrderEntity(
                         id = model._id,
                         userId = userId,
-                        orderItems = model.orderItems.map { Converters.EmbeddedOrderItem(it.product, it.quantity, it.price, it.local) },
-                        shippingInfo = Converters.EmbeddedShippingInfo(model.shippingInfo.fullName, model.shippingInfo.phone, model.shippingInfo.address, model.shippingInfo.local),
+                        orderItems = model.orderItems.map { 
+                            Converters.EmbeddedOrderItem(
+                                product = it.productId,
+                                quantity = it.quantity,
+                                price = it.price,
+                                local = it.local,
+                                productName = it.productName,
+                                productImg = it.productImg,
+                                authorName = it.authorName
+                            ) 
+                        },
+                        shippingInfo = Converters.EmbeddedShippingInfo(model.shippingInfo.fullName, model.shippingInfo.phone,model.shippingInfo.local),
                         paymentMethod = model.paymentMethod,
                         totalPrice = model.totalPrice,
                         orderStatus = model.orderStatus,
@@ -92,8 +114,18 @@ class OrderRepository(
                     val entity = OrderEntity(
                         id = order._id,
                         userId = userId,
-                        orderItems = order.orderItems.map { Converters.EmbeddedOrderItem(it.product, it.quantity, it.price, it.local) },
-                        shippingInfo = Converters.EmbeddedShippingInfo(order.shippingInfo.fullName, order.shippingInfo.phone, order.shippingInfo.address, order.shippingInfo.local),
+                        orderItems = order.orderItems.map { 
+                            Converters.EmbeddedOrderItem(
+                                product = it.productId,
+                                quantity = it.quantity,
+                                price = it.price,
+                                local = it.local,
+                                productName = it.productName,
+                                productImg = it.productImg,
+                                authorName = it.authorName
+                            ) 
+                        },
+                        shippingInfo = Converters.EmbeddedShippingInfo(order.shippingInfo.fullName, order.shippingInfo.phone, order.shippingInfo.local),
                         paymentMethod = order.paymentMethod,
                         totalPrice = order.totalPrice,
                         orderStatus = order.orderStatus,

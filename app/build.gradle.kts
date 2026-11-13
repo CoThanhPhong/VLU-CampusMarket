@@ -34,15 +34,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    sourceSets {
-        getByName("main") {
-            res.srcDirs(
-                "src/main/res/layout/fragment",
-                "src/main/res/layout/product",
-                "src/main/res" // Bắt buộc giữ lại dòng này để nhận các tài nguyên mặc định khác (values, drawable...)
-            )
-        }
-    }
 }
 
 dependencies {

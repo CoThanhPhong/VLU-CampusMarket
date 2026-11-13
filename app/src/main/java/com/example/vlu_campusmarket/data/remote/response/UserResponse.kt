@@ -14,5 +14,9 @@ data class UserListResponse(
 )
 
 data class UserIdRequest(
-    val id: String
-)
+    val id: String,
+    val userId: String,
+    val _id: String
+) {
+    constructor(id: String) : this(id, id, id)
+}

@@ -43,36 +43,38 @@ class CartViewModel(
             val userId = cartRepository.getLoggedInUserId()
             if (userId != null) {
                 cartRepository.fetchRemoteCart()
-                cartRepository.getCartLocal(userId).collect { rawItems ->
-                    productDao.getAllProducts().collect { allProducts ->
-                        val productMap = allProducts.associateBy { it._id }
-                        val uiList = rawItems.map { item ->
-                            val entity = productMap[item.product]
-                            val model = entity?.let { e ->
-                                ProductModel(
-                                    _id = e._id,
-                                    name = e.name,
-                                    description = e.description,
-                                    price = e.price,
-                                    amount = e.amount,
-                                    local = e.local,
-                                    img = e.img,
-                                    startDate = null,
-                                    status = e.status,
-                                    deviceType = e.deviceType,
-                                    endDate = null,
-                                    author = e.author
-                                )
-                            }
-                            CartItemUIModel(
-                                productId = item.product,
-                                quantity = item.quantity,
-                                product = model
+                combine(
+                    cartRepository.getCartLocal(userId),
+                    productDao.getAllProducts()
+                ) { rawItems, allProducts ->
+                    val productMap = allProducts.associateBy { it._id }
+                    rawItems.map { item ->
+                        val entity = productMap[item.productId]
+                        val model = entity?.let { e ->
+                            ProductModel(
+                                _id = e._id,
+                                name = e.name,
+                                description = e.description,
+                                price = e.price,
+                                amount = e.amount,
+                                local = e.local,
+                                img = e.img,
+                                startDate = null,
+                                status = e.status,
+                                deviceType = e.deviceType,
+                                endDate = null,
+                                author = e.author
                             )
                         }
-                        _cartItems.value = uiList
-                        _isLoading.value = false
+                        CartItemUIModel(
+                            productId = item.productId,
+                            quantity = item.quantity,
+                            product = model
+                        )
                     }
+                }.collect { uiList ->
+                    _cartItems.value = uiList
+                    _isLoading.value = false
                 }
             } else {
                 _cartItems.value = emptyList()
@@ -82,6 +84,17 @@ class CartViewModel(
     }
 
     fun updateQuantity(productId: String, newQty: Int) {
+        val currentList = _cartItems.value.toMutableList()
+        if (newQty <= 0) {
+            currentList.removeAll { it.productId == productId }
+        } else {
+            val idx = currentList.indexOfFirst { it.productId == productId }
+            if (idx >= 0) {
+                currentList[idx] = currentList[idx].copy(quantity = newQty)
+            }
+        }
+        _cartItems.value = currentList
+
         viewModelScope.launch {
             cartRepository.updateQuantity(productId, newQty)
         }
@@ -111,7 +124,7 @@ class CartViewModel(
             _isLoading.value = false
 
             if (success) {
-                // Xóa các sản phẩm trong giỏ sau khi đặt hàng thành công
+                _cartItems.value = emptyList()
                 items.forEach { cartRepository.updateQuantity(it.productId, 0) }
                 onResult(true, "Đặt hàng thành công!")
             } else {

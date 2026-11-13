@@ -3,7 +3,7 @@ package com.example.vlu_campusmarket.utils
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
-import com.example.vlu_campusmarket.data.models.UserModel // Sử dụng đúng UserModel của bạn
+import com.example.vlu_campusmarket.data.models.UserModel
 
 class SessionManager(context: Context) {
     private val prefs: SharedPreferences =
@@ -15,17 +15,15 @@ class SessionManager(context: Context) {
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
     }
 
-    // Lưu trực tiếp đối tượng UserModel vào Session dưới dạng JSON
-    fun saveUserSession(user: UserModel) {
+    fun saveUserSession(user: UserModel, rememberMe: Boolean = true) {
         val jsonString = gson.toJson(user)
         prefs.edit().apply {
             putString(KEY_USER_OBJECT, jsonString)
-            putBoolean(KEY_IS_LOGGED_IN, true)
+            putBoolean(KEY_IS_LOGGED_IN, rememberMe)
             apply()
         }
     }
 
-    // Lấy đối tượng UserModel ra
     fun fetchUser(): UserModel? {
         val jsonString = prefs.getString(KEY_USER_OBJECT, null)
         return if (jsonString != null) {

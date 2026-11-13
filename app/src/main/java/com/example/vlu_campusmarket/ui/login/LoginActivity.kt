@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -12,6 +13,7 @@ import com.bumptech.glide.Glide
 import com.example.vlu_campusmarket.R
 import com.example.vlu_campusmarket.databinding.ActivityLoginBinding
 import com.example.vlu_campusmarket.ui.main.MainActivity
+import com.example.vlu_campusmarket.utils.SessionManager
 
 class LoginActivity : AppCompatActivity() {
 
@@ -20,6 +22,14 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Kiểm tra ngay lập tức đồng bộ qua SessionManager (0ms, không nháy màn hình đăng nhập)
+        val sessionManager = SessionManager(this)
+        if (sessionManager.isLoggedIn()) {
+            navigateToMain()
+            return
+        }
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -35,6 +45,14 @@ class LoginActivity : AppCompatActivity() {
             .load("https://online.vlu.edu.vn/Content/logo/logosona.jpg")
             .placeholder(R.drawable.ic_launcher_foreground)
             .into(binding.ivLogo)
+
+        binding.btnInfo.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Thông tin đăng nhập")
+                .setMessage("Sử dụng tài khoản vlu online để đăng nhập")
+                .setPositiveButton("Đã hiểu", null)
+                .show()
+        }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

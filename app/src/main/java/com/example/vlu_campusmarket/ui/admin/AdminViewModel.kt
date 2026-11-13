@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+import com.example.vlu_campusmarket.data.local.entity.ProductEntity
+import com.google.gson.Gson
+
 class AdminViewModel(
     private val apiService: ApiService,
     private val productDao: ProductDao
@@ -43,7 +46,25 @@ class AdminViewModel(
                 // Fetch Products
                 val prodResponse = apiService.getAllProducts()
                 if (prodResponse.isSuccessful) {
-                    _allProducts.value = prodResponse.body()?.data ?: emptyList()
+                    val prods = prodResponse.body()?.data ?: emptyList()
+                    _allProducts.value = prods
+                    val entities = prods.map { model ->
+                        ProductEntity(
+                            _id = model.safeId,
+                            name = model.name,
+                            description = model.description,
+                            price = model.price,
+                            amount = model.amount,
+                            local = model.local,
+                            img = if (model.imageList.isNotEmpty()) Gson().toJson(model.imageList) else model.imageUrl,
+                            status = model.status,
+                            deviceType = model.deviceType,
+                            author = model.authorId
+                        )
+                    }.filter { it._id.isNotEmpty() }
+                    if (entities.isNotEmpty()) {
+                        productDao.insertProducts(entities)
+                    }
                 }
 
                 // Fetch Orders
@@ -70,6 +91,7 @@ class AdminViewModel(
             try {
                 val response = apiService.deleteProduct(ProductIdRequest(productId))
                 if (response.isSuccessful) {
+                    productDao.deleteProductById(productId)
                     refreshAllData()
                     onResult(true, "Đã xóa sản phẩm thành công")
                 } else {
@@ -81,10 +103,63 @@ class AdminViewModel(
         }
     }
 
+    fun updateProductStatusBatch(productIds: List<String>, newStatus: String, onResult: (Boolean, String) -> Unit) {
+        if (productIds.isEmpty()) {
+            onResult(false, "Vui lòng chọn sản phẩm")
+            return
+        }
+        viewModelScope.launch {
+            _isLoading.value = true
+            var successCount = 0
+            val currentProducts = _allProducts.value.associateBy { it._id }
+
+            productIds.forEach { id ->
+                val currentModel = currentProducts[id]
+                if (currentModel != null) {
+                    val updatedModel = currentModel.copy(status = newStatus)
+                    val response = apiService.updateProduct(updatedModel)
+                    if (response.isSuccessful) {
+                        successCount++
+                    }
+                }
+            }
+            refreshAllData()
+            onResult(true, "Đã cập nhật $successCount/${productIds.size} sản phẩm")
+        }
+    }
+
+    fun deleteProductsBatch(productIds: List<String>, onResult: (Boolean, String) -> Unit) {
+        if (productIds.isEmpty()) {
+            onResult(false, "Vui lòng chọn sản phẩm")
+            return
+        }
+        viewModelScope.launch {
+            _isLoading.value = true
+            var successCount = 0
+            productIds.forEach { id ->
+                val response = apiService.deleteProduct(ProductIdRequest(id))
+                if (response.isSuccessful) {
+                    productDao.deleteProductById(id)
+                    successCount++
+                }
+            }
+            refreshAllData()
+            onResult(true, "Đã xóa $successCount/${productIds.size} sản phẩm")
+        }
+    }
+
     fun updateOrderStatus(orderId: String, newStatus: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
-                val response = apiService.updateOrderStatus(UpdateOrderStatusRequest(orderId, newStatus))
+                val req = UpdateOrderStatusRequest(orderId, newStatus)
+                var response = apiService.updateOrderStatus(req)
+                if (!response.isSuccessful) {
+                    response = apiService.updateOrderStatusStatus(req)
+                }
+                if (!response.isSuccessful) {
+                    response = apiService.updateOrderStatusUpdate(req)
+                }
+
                 if (response.isSuccessful) {
                     refreshAllData()
                     onResult(true, "Đã cập nhật trạng thái đơn hàng")

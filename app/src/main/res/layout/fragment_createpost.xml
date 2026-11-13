@@ -22,29 +22,61 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Preview Ảnh -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#CBD5E1">
+        <!-- Phần chọn ảnh (Tối đa 5 ảnh: File & Link giống Web) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hình ảnh sản phẩm (Tối đa 5 ảnh)"
+            android:textColor="#1E293B"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
-            <ImageView
-                android:id="@+id/imgPreview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_launcher_foreground" />
-        </com.google.android.material.card.MaterialCardView>
+        <!-- RecyclerView hiển thị danh sách ảnh đã chọn (thumbnails) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvImageThumbnails"
+            android:layout_width="match_parent"
+            android:layout_height="90dp"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp" />
 
-        <!-- URL Ảnh -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickImages"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:text="Chọn file ảnh"
+                android:textColor="#E11D48"
+                app:strokeColor="#E11D48"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddUrl"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="Thêm Link URL"
+                android:textColor="#2563EB"
+                app:strokeColor="#2563EB"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+        <!-- Nhập URL ảnh -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="URL Hình ảnh sản phẩm (hoặc /uploads/...)">
+            android:layout_marginBottom="16dp"
+            android:hint="Nhập link URL hình ảnh">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etImgUrl"
                 android:layout_width="match_parent"
@@ -56,7 +88,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="4dp"
             android:hint="Tên sản phẩm">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etProductName"

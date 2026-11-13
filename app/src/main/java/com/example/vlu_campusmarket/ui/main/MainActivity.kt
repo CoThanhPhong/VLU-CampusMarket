@@ -16,6 +16,7 @@ import com.example.vlu_campusmarket.ui.fragment.OrderFragment
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private var currentTab = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,17 +36,28 @@ class MainActivity : AppCompatActivity() {
             replaceFragment(HomeFragment(), "Trang chủ")
         }
 
-        // Bắt sự kiện chuyển đổi tab trên thanh Navigation
+        // Bắt sự kiện chuyển đổi tab trên thanh Navigation (5 tabs)
         binding.bottomBar.onItemSelected = { index ->
-            // Xóa hết backstack khi người dùng chuyển giữa các Tab chính
-            supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-
-            when (index) {
-                0 -> replaceFragment(HomeFragment(), "Trang chủ")
-                1 -> replaceFragment(CartFragment(), "Giỏ hàng")
-                2 -> replaceFragment(CreatePostFragment(), "Tạo bài đăng mới")
-                3 -> replaceFragment(OrderFragment(), "Đơn hàng")
-                4 -> replaceFragment(MenuFragment(), "Danh mục Menu")
+            if (currentTab == index) {
+                // Click lần 2 vào cùng tab -> quay về trang gốc của tab đó ngay lập tức
+                supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                when (index) {
+                    0 -> replaceFragment(HomeFragment(), "Trang chủ")
+                    1 -> replaceFragment(CartFragment(), "Giỏ hàng")
+                    2 -> replaceFragment(CreatePostFragment(), "Tạo bài đăng mới")
+                    3 -> replaceFragment(OrderFragment(), "Hóa đơn của tôi")
+                    4 -> replaceFragment(MenuFragment(), "Danh mục Menu")
+                }
+            } else {
+                currentTab = index
+                supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                when (index) {
+                    0 -> replaceFragment(HomeFragment(), "Trang chủ")
+                    1 -> replaceFragment(CartFragment(), "Giỏ hàng")
+                    2 -> replaceFragment(CreatePostFragment(), "Tạo bài đăng mới")
+                    3 -> replaceFragment(OrderFragment(), "Hóa đơn của tôi")
+                    4 -> replaceFragment(MenuFragment(), "Danh mục Menu")
+                }
             }
         }
     }

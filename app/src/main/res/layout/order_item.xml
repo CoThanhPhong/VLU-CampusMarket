@@ -69,12 +69,25 @@
             android:textSize="13sp"
             android:layout_marginTop="4dp" />
 
+        <!-- Container hiển thị chi tiết từng sản phẩm trong đơn hàng -->
+        <LinearLayout
+            android:id="@+id/layoutOrderItemsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="6dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E2E8F0"
+            android:layout_marginVertical="8dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="12dp">
+            android:gravity="center_vertical">
 
             <TextView
                 android:id="@+id/tvOrderTotal"

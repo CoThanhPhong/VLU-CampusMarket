@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vlu_campusmarket.data.models.OrderModel
 import com.example.vlu_campusmarket.databinding.OrderItemBinding
+import com.example.vlu_campusmarket.databinding.OrderSubItemBinding
+import com.example.vlu_campusmarket.utils.loadImageWithGlide
 import java.text.DecimalFormat
 
 class AdminOrderAdapter(
@@ -18,12 +20,22 @@ class AdminOrderAdapter(
     private val formatter = DecimalFormat("#,###")
 
     inner class AdminOrderViewHolder(val binding: OrderItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.btnCancelOrder.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val order = getItem(pos)
+                    onChangeStatus(order._id, order.orderStatus)
+                }
+            }
+        }
+
         fun bind(order: OrderModel) {
             binding.tvOrderId.text = "Đơn hệ thống: #${order._id.take(8)}"
             binding.tvOrderStatus.text = order.orderStatus
 
             when (order.orderStatus.lowercase()) {
-                "đang xử lý", "pending", "processing" -> {
+                "đang xử lý", "pending", "processing", "chờ xác nhận" -> {
                     binding.tvOrderStatus.text = "Chờ xử lý"
                     binding.tvOrderStatus.setTextColor(Color.parseColor("#EAB308"))
                     binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#FEF9C3"))
@@ -51,15 +63,26 @@ class AdminOrderAdapter(
             }
 
             val ship = order.shippingInfo
-            binding.tvShippingDetails.text = "Khách: ${ship.fullName} (${ship.phone})\nĐịa chỉ: ${ship.address} - ${ship.local}"
+            binding.tvShippingDetails.text = "Khách: ${ship.fullName} (${ship.phone})\nĐịa chỉ: ${ship.local}"
+            
             val totalQty = order.orderItems.sumOf { it.quantity }
             binding.tvOrderItemsCount.text = "Số lượng: $totalQty | TT: ${order.paymentMethod}"
             binding.tvOrderTotal.text = "Tổng: ${formatter.format(order.totalPrice)} \u20ab"
 
             binding.btnCancelOrder.text = "Đổi trạng thái"
             binding.btnCancelOrder.visibility = View.VISIBLE
-            binding.btnCancelOrder.setOnClickListener {
-                onChangeStatus(order._id, order.orderStatus)
+
+            // Hiển thị chi tiết từng sản phẩm và tên người đăng trong đơn hàng
+            binding.layoutOrderItemsContainer.removeAllViews()
+            val inflater = LayoutInflater.from(binding.root.context)
+            order.orderItems.forEach { item ->
+                val subBinding = OrderSubItemBinding.inflate(inflater, binding.layoutOrderItemsContainer, false)
+                val productName = item.productName ?: "Sản phẩm (${item.productId.take(6)})"
+                val authorText = if (!item.authorName.isNullOrEmpty()) "Người đăng: ${item.authorName}" else ""
+                subBinding.tvSubProductName.text = productName
+                subBinding.tvSubProductDetails.text = "SL: ${item.quantity} | ${formatter.format(item.price)} đ | ${item.local}\n${authorText}"
+                subBinding.imgSubProduct.loadImageWithGlide(item.productImg, maxWidth = 150, maxHeight = 150)
+                binding.layoutOrderItemsContainer.addView(subBinding.root)
             }
         }
     }

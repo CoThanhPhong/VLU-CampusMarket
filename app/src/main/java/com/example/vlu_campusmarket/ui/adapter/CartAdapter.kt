@@ -18,6 +18,36 @@ class CartAdapter(
     private val formatter = DecimalFormat("#,###")
 
     inner class CartViewHolder(val binding: CartItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.btnPlus.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val item = getItem(pos)
+                    onQuantityChanged(item.productId, item.quantity + 1)
+                }
+            }
+
+            binding.btnMinus.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val item = getItem(pos)
+                    if (item.quantity > 1) {
+                        onQuantityChanged(item.productId, item.quantity - 1)
+                    } else {
+                        onDeleteItem(item.productId)
+                    }
+                }
+            }
+
+            binding.btnDelete.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val item = getItem(pos)
+                    onDeleteItem(item.productId)
+                }
+            }
+        }
+
         fun bind(item: CartItemUIModel) {
             val product = item.product
             binding.tvCartProductName.text = product?.name ?: "Sản phẩm (${item.productId.take(6)})"
@@ -25,23 +55,7 @@ class CartAdapter(
             binding.tvCartProductPrice.text = "${formatter.format(price)} \u20ab"
             binding.tvQuantity.text = item.quantity.toString()
 
-            binding.imgCartProduct.loadImageWithGlide(product?.imageUrl)
-
-            binding.btnPlus.setOnClickListener {
-                onQuantityChanged(item.productId, item.quantity + 1)
-            }
-
-            binding.btnMinus.setOnClickListener {
-                if (item.quantity > 1) {
-                    onQuantityChanged(item.productId, item.quantity - 1)
-                } else {
-                    onDeleteItem(item.productId)
-                }
-            }
-
-            binding.btnDelete.setOnClickListener {
-                onDeleteItem(item.productId)
-            }
+            binding.imgCartProduct.loadImageWithGlide(product?.imageUrl, maxWidth = 250, maxHeight = 250)
         }
     }
 

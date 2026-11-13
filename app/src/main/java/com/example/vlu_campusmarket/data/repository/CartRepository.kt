@@ -37,7 +37,7 @@ class CartRepository(
             if (response.isSuccessful && response.body()?.success == true) {
                 val items = response.body()?.data ?: emptyList()
                 val embeddedItems = items.map {
-                    Converters.EmbeddedCartItem(product = it.product, quantity = it.quantity)
+                    Converters.EmbeddedCartItem(product = it.productId, quantity = it.quantity)
                 }
                 val entity = CartEntity(
                     id = "cart_$userId",

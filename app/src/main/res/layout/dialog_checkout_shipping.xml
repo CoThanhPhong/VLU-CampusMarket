@@ -41,18 +41,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="Địa chỉ nhận hàng (Lớp/Phòng/Khu vực)">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etAddress"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:hint="Cơ sở VLU (Ví dụ: Cơ sở 1, Cơ sở 3)">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etCampus"

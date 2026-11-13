@@ -13,7 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.vlu_campusmarket.data.local.AppDatabase
 import com.example.vlu_campusmarket.data.remote.RetrofitClient
 import com.example.vlu_campusmarket.databinding.FragmentAdminProductBinding
@@ -57,32 +57,73 @@ class AdminProductFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        productAdapter = AdminProductAdapter { productId ->
-            showDeleteConfirmDialog(productId)
-        }
-        binding.rvAdminProducts.layoutManager = GridLayoutManager(requireContext(), 2)
+        productAdapter = AdminProductAdapter(
+            onSelectionChanged = { count ->
+                binding.tvSelectedCount.text = "Đã chọn: $count"
+                binding.cbSelectAll.isChecked = count > 0 && count == productAdapter.itemCount
+            }
+        )
+        binding.rvAdminProducts.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAdminProducts.adapter = productAdapter
-    }
-
-    private fun showDeleteConfirmDialog(productId: String) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Xóa bài đăng")
-            .setMessage("Bạn có chắc chắn muốn xóa bài đăng này khỏi hệ thống không?")
-            .setPositiveButton("Xóa") { dialog, _ ->
-                viewModel.deleteProduct(productId) { success, msg ->
-                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Hủy") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun setupListeners() {
         binding.swipeRefreshAdminProducts.setOnRefreshListener {
+            productAdapter.clearSelection()
             viewModel.refreshAllData()
+        }
+
+        binding.cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                productAdapter.selectAll()
+            } else if (productAdapter.getSelectedIds().size == productAdapter.itemCount) {
+                productAdapter.clearSelection()
+            }
+        }
+
+        binding.btnBatchApprove.setOnClickListener {
+            val selected = productAdapter.getSelectedIds()
+            if (selected.isEmpty()) {
+                Toast.makeText(requireContext(), "Vui lòng chọn sản phẩm cần duyệt", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            viewModel.updateProductStatusBatch(selected, "APPROVED") { success, msg ->
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                if (success) productAdapter.clearSelection()
+            }
+        }
+
+        binding.btnBatchReject.setOnClickListener {
+            val selected = productAdapter.getSelectedIds()
+            if (selected.isEmpty()) {
+                Toast.makeText(requireContext(), "Vui lòng chọn sản phẩm cần từ chối", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            viewModel.updateProductStatusBatch(selected, "REJECTED") { success, msg ->
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                if (success) productAdapter.clearSelection()
+            }
+        }
+
+        binding.btnBatchDelete.setOnClickListener {
+            val selected = productAdapter.getSelectedIds()
+            if (selected.isEmpty()) {
+                Toast.makeText(requireContext(), "Vui lòng chọn sản phẩm cần xóa", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Xóa hàng loạt")
+                .setMessage("Bạn có chắc chắn muốn xóa ${selected.size} sản phẩm đã chọn?")
+                .setPositiveButton("Xóa") { dialog, _ ->
+                    viewModel.deleteProductsBatch(selected) { success, msg ->
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                        if (success) productAdapter.clearSelection()
+                    }
+                    dialog.dismiss()
+                }
+                .setNegativeButton("Hủy") { dialog, _ -> dialog.dismiss() }
+                .show()
         }
     }
 
