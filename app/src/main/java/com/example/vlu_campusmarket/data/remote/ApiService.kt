@@ -18,6 +18,68 @@ interface ApiService {
     @GET("auth/profile")
     suspend fun getCurrentUser(): Response<UserDetailResponse>
 
+    @GET("auth/me")
+    suspend fun getCurrentUserMe(): Response<UserDetailResponse>
+
+    @GET("user/me")
+    suspend fun getUserMe(): Response<UserDetailResponse>
+
+    @GET("users/me")
+    suspend fun getUsersMe(): Response<UserDetailResponse>
+
+    @GET("auth/user")
+    suspend fun getCurrentUserAuthUser(): Response<UserDetailResponse>
+
+    @PUT("auth/profile")
+    suspend fun updateProfile(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @PUT("auth/user")
+    suspend fun updateUserProfile(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @PUT("auth/u")
+    suspend fun updateProfileU(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @POST("auth/u")
+    suspend fun updateProfileUPost(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @PUT("auth/user/u")
+    suspend fun updateUserProfileU(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @POST("auth/user/u")
+    suspend fun updateUserProfileUPost(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @PUT("auth/update")
+    suspend fun updateProfileUpdate(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @POST("auth/update")
+    suspend fun updateProfileUpdatePost(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @PUT("users/u")
+    suspend fun updateUsersU(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
+    @PUT("users/update")
+    suspend fun updateUsersUpdate(
+        @Body request: Map<String, String>
+    ): Response<UserDetailResponse>
+
     @GET("auth/users")
     suspend fun getAllUsers(): Response<UserListResponse>
 
@@ -25,6 +87,11 @@ interface ApiService {
     suspend fun getUserById(
         @Body request: UserIdRequest
     ): Response<UserDetailResponse>
+
+    @HTTP(method = "DELETE", path = "auth/user/d", hasBody = true)
+    suspend fun deleteUser(
+        @Body request: UserIdRequest
+    ): Response<BaseApiResponse>
 
 
     // ==========================================
@@ -59,10 +126,28 @@ interface ApiService {
     @GET("orders/g")
     suspend fun getMyOrders(): Response<OrderListResponse>
 
+    @GET("orders/seller/g")
+    suspend fun getAllOrders(): Response<OrderListResponse>
+
     @PUT("orders/cancel")
     suspend fun cancelOrder(
         @Body request: CancelOrderRequest
     ): Response<CancelOrderResponse>
+
+    @PUT("orders/u")
+    suspend fun updateOrderStatus(
+        @Body request: UpdateOrderStatusRequest
+    ): Response<OrderCreateResponse>
+
+    @PUT("orders/status")
+    suspend fun updateOrderStatusStatus(
+        @Body request: UpdateOrderStatusRequest
+    ): Response<OrderCreateResponse>
+
+    @PUT("orders/update")
+    suspend fun updateOrderStatusUpdate(
+        @Body request: UpdateOrderStatusRequest
+    ): Response<OrderCreateResponse>
 
 
     // ==========================================
@@ -74,14 +159,15 @@ interface ApiService {
         @Body products: List<ProductModel>
     ): Response<ProductCreateResponse>
 
-    // Sử dụng @HTTP với hasBody = true vì GET request bên Node.js có nhận req.body[cite: 11, 15]
-    @HTTP(method = "GET", path = "products/g", hasBody = true)
+    @GET("products/g")
     suspend fun getProductById(
-        @Body request: ProductIdRequest?
+        @Query("id") id: String?
     ): Response<ProductSingleResponse>
 
     @GET("products/g")
-    suspend fun getAllProducts(): ProductListResponse
+    suspend fun getAllProducts(
+        @Query("page") page: Int = 1
+    ): Response<ProductListResponse>
 
     @PUT("products/u")
     suspend fun updateProduct(

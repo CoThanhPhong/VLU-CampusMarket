@@ -5,12 +5,15 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import coil.load // Thư viện Coil để load ảnh online
+import com.bumptech.glide.Glide
+import com.example.vlu_campusmarket.R
 import com.example.vlu_campusmarket.databinding.ActivityLoginBinding
 import com.example.vlu_campusmarket.ui.main.MainActivity
+import com.example.vlu_campusmarket.utils.SessionManager
 
 class LoginActivity : AppCompatActivity() {
 
@@ -19,13 +22,36 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Kiểm tra ngay lập tức đồng bộ qua SessionManager (0ms, không nháy màn hình đăng nhập)
+        val sessionManager = SessionManager(this)
+        if (sessionManager.isLoggedIn()) {
+            navigateToMain()
+            return
+        }
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Load logo trực tiếp từ URL online của VLU
-        binding.ivLogo.load("https://online.vlu.edu.vn/Content/logo/logosona.jpg") {
-            crossfade(true)
-            // placeholder(R.drawable.ic_placeholder) // (Tuỳ chọn) Ảnh hiển thị tạm trong lúc chờ tải
+        // Kiểm tra tự động đăng nhập nếu có phiên duy trì
+        viewModel.checkAutoLogin { autoLoggedIn ->
+            if (autoLoggedIn) {
+                navigateToMain()
+            }
+        }
+
+        // Load logo VLU với Glide
+        Glide.with(this)
+            .load("https://online.vlu.edu.vn/Content/logo/logosona.jpg")
+            .placeholder(R.drawable.ic_launcher_foreground)
+            .into(binding.ivLogo)
+
+        binding.btnInfo.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Thông tin đăng nhập")
+                .setMessage("Sử dụng tài khoản vlu online để đăng nhập")
+                .setPositiveButton("Đã hiểu", null)
+                .show()
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
@@ -54,14 +80,18 @@ class LoginActivity : AppCompatActivity() {
 
                 if (success) {
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this, MainActivity::class.java)
-                    startActivity(intent)
-                    finish()
+                    navigateToMain()
                 } else {
                     showError(message)
                 }
             }
         }
+    }
+
+    private fun navigateToMain() {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun showError(message: String) {

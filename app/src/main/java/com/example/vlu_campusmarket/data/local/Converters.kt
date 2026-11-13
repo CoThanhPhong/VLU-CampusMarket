@@ -8,8 +8,16 @@ class Converters {
     private val gson = Gson()
 
     data class EmbeddedCartItem(val product: String, val quantity: Int)
-    data class EmbeddedOrderItem(val product: String, val quantity: Int, val price: Double, val local: String)
-    data class EmbeddedShippingInfo(val fullName: String, val phone: String, val address: String, val local: String)
+    data class EmbeddedOrderItem(
+        val product: String,
+        val quantity: Int,
+        val price: Double,
+        val local: String,
+        val productName: String? = null,
+        val productImg: String? = null,
+        val authorName: String? = null
+    )
+    data class EmbeddedShippingInfo(val fullName: String, val phone: String, val local: String)
 
     @TypeConverter
     fun fromCartItems(value: List<EmbeddedCartItem>?): String = gson.toJson(value)
