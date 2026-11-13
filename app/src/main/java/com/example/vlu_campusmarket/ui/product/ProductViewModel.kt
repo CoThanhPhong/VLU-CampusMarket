@@ -13,8 +13,9 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private val _selectedCategory = MutableStateFlow("ALL")
     private val _searchQuery = MutableStateFlow("")
 
-    // Bộ nhớ cache tạm thời ánh xạ từ userId sang tên người dùng
+    // Cache userId -> tên người dùng, và các userId đang được gọi API (tránh gọi trùng)
     private val userCache = mutableMapOf<String, String>()
+    private val inFlightUsers = mutableSetOf<String>()
 
     private val _userNames = MutableStateFlow(mapOf<String, String>())
     val userNames: StateFlow<Map<String, String>> = _userNames.asStateFlow()
@@ -22,14 +23,19 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    // Danh sách sản phẩm sau khi lọc danh mục & tìm kiếm
+    // Thông báo lỗi một lần (hiển thị Toast)
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
+
+    private var initialSyncRequested = false
+
     val filteredProducts: StateFlow<List<ProductModel>> = combine(
         _allProducts,
         _selectedCategory,
         _searchQuery
     ) { products, category, query ->
         products.filter { product ->
-            val matchCategory = if (category == "ALL") true else product.deviceType.equals(category, ignoreCase = true)
+            val matchCategory = category == "ALL" || product.deviceType.equals(category, ignoreCase = true)
             val matchQuery = product.name.contains(query, ignoreCase = true)
             matchCategory && matchQuery
         }
@@ -43,7 +49,9 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         viewModelScope.launch {
             repository.localProducts.collect { list ->
                 _allProducts.value = list
-                if (list.isEmpty()) {
+                // Chỉ tự đồng bộ 1 lần khi DB rỗng (tránh lặp vô hạn khi server lỗi)
+                if (list.isEmpty() && !initialSyncRequested) {
+                    initialSyncRequested = true
                     refreshData()
                 }
             }
@@ -51,21 +59,24 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     }
 
     fun refreshData() {
+        if (_isRefreshing.value) return
         viewModelScope.launch {
             _isRefreshing.value = true
-            repository.fetchFromRemoteAndSave()
-            _isRefreshing.value = false
+            try {
+                repository.fetchFromRemoteAndSave()?.let { _messages.tryEmit(it) }
+            } finally {
+                _isRefreshing.value = false
+            }
         }
     }
 
-    // Lấy tên người dùng dựa theo cấu trúc profile?.name của UserModel
     fun fetchUserNameIfNeeded(userId: String) {
-        if (userId.isBlank() || userCache.containsKey(userId)) return
+        if (userId.isBlank() || userCache.containsKey(userId) || !inFlightUsers.add(userId)) return
 
         viewModelScope.launch {
             val user = repository.getUserDetail(userId)
-            val authorName = user?.profile?.name ?: "Người dùng"
-            userCache[userId] = authorName
+            userCache[userId] = user?.profile?.name?.takeIf { it.isNotBlank() } ?: "Người dùng"
+            inFlightUsers.remove(userId)
             _userNames.value = userCache.toMap()
         }
     }

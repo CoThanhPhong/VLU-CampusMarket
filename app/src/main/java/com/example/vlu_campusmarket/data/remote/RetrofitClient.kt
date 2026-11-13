@@ -9,19 +9,33 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // 💡 Chọn 1 trong 2 cấu hình BASE_URL tùy thuộc vào thiết bị bạn đang chạy test:
-
-    // 1. Dành cho Android Emulator (Máy ảo Android Studio)
+    // 1. Android Emulator: 10.0.2.2 = localhost của máy tính đang chạy server.
+    //    Server Node phải listen ở 0.0.0.0 (hoặc IPv4 127.0.0.1) cổng 5000.
+    // 2. Thiết bị thật: đổi thành IP LAN của máy tính, ví dụ "http://192.168.1.10:5000/api/"
     private const val BASE_URL = "http://10.0.2.2:5000/api/"
 
-    fun getInstance(context: Context): ApiService {
+    // Dùng CHUNG 1 cookie jar + 1 ApiService cho toàn app để session đăng nhập không bị mất
+    private val cookieJar = SessionCookieJar()
+
+    @Volatile
+    private var apiService: ApiService? = null
+
+    fun getInstance(@Suppress("UNUSED_PARAMETER") context: Context): ApiService {
+        return apiService ?: synchronized(this) {
+            apiService ?: buildApi().also { apiService = it }
+        }
+    }
+
+    private fun buildApi(): ApiService {
+        // BASIC: chỉ log dòng request/response, KHÔNG log body (tránh lộ mật khẩu trong Logcat)
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.BASIC
         }
 
         val okHttpClient = OkHttpClient.Builder()
-            .cookieJar(SessionCookieJar())
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .cookieJar(cookieJar)
+            .addInterceptor(logging)
+            .connectTimeout(10, TimeUnit.SECONDS) // báo lỗi nhanh hơn, trước đây phải chờ 30s
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()

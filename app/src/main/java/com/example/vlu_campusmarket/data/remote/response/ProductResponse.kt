@@ -9,9 +9,9 @@ data class ProductCreateResponse(
 )
 
 data class ProductListResponse(
-    val count: Int,
-    val success: Boolean,
-    val data: List<ProductModel>
+    val count: Int = 0,
+    val success: Boolean = false,
+    val data: List<ProductModel>? = null
 )
 
 data class ProductSingleResponse(

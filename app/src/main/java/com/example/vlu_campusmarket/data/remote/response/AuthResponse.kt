@@ -8,7 +8,7 @@ data class LoginRequest(
 )
 
 data class LoginResponse(
-    val success: Boolean,
-    val user: UserModel?,
-    val message: String
+    val success: Boolean = false,
+    val user: UserModel? = null,
+    val message: String? = null
 )
