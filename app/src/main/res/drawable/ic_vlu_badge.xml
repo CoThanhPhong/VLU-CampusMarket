@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background Shield / Badge -->
+    <path
+        android:fillColor="#E11D48"
+        android:pathData="M24,20 C24,20 24,12 36,12 C44,12 50,18 54,26 C58,18 64,12 72,12 C84,12 84,20 84,20 L84,54 C84,76 68,92 54,96 C40,92 24,76 24,54 Z" />
+
+    <!-- Top White Ribbon Bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,26 L80,26 L80,31 L28,31 Z" />
+
+    <!-- Stylized White V in Center -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,42 L48,42 L54,66 L60,42 L68,42 L58,74 L50,74 Z" />
+</vector>
