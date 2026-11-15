@@ -9,12 +9,12 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
-    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
+    @Query("SELECT * FROM users LIMIT 1")
     fun getLoggedInUser(): Flow<UserEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: UserEntity)
 
-    @Query("UPDATE users SET isLoggedIn = 0")
+    @Query("DELETE FROM users")
     suspend fun logoutAll()
 }

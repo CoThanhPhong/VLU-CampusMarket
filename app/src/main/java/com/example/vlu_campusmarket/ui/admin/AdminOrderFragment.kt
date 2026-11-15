@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -18,11 +18,14 @@ import com.example.vlu_campusmarket.data.local.AppDatabase
 import com.example.vlu_campusmarket.data.remote.RetrofitClient
 import com.example.vlu_campusmarket.databinding.FragmentAdminOrderBinding
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 
 class AdminOrderFragment : Fragment() {
 
     private var _binding: FragmentAdminOrderBinding? = null
     private val binding get() = _binding!!
+
+    private val formatter = DecimalFormat("#,###")
 
     private val viewModel: AdminViewModel by viewModels {
         object : ViewModelProvider.Factory {
@@ -50,6 +53,7 @@ class AdminOrderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Quản lý đơn hàng"
 
         setupRecyclerView()
         setupListeners()
@@ -57,26 +61,31 @@ class AdminOrderFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        orderAdapter = AdminOrderAdapter { orderId, currentStatus ->
-            showChangeStatusDialog(orderId, currentStatus)
-        }
-        binding.rvAdminOrders.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvAdminOrders.adapter = orderAdapter
-    }
-
-    private fun showChangeStatusDialog(orderId: String, currentStatus: String) {
-        val statuses = arrayOf("Chờ xử lý", "Đã xác nhận", "Đang giao", "Hoàn thành", "Đã hủy")
-        AlertDialog.Builder(requireContext())
-            .setTitle("Cập nhật trạng thái đơn hàng")
-            .setItems(statuses) { dialog, which ->
-                val newStatus = statuses[which]
-                viewModel.updateOrderStatus(orderId, newStatus) { success, msg ->
+        orderAdapter = AdminOrderAdapter(
+            onConfirmOrder = { orderId ->
+                viewModel.updateOrderStatus(orderId, "Đã xác nhận") { _, msg ->
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 }
-                dialog.dismiss()
+            },
+            onCancelOrder = { orderId ->
+                viewModel.updateOrderStatus(orderId, "Đã hủy") { _, msg ->
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onSubItemAction = { order, item, action ->
+                if (action.equals("Xác nhận", ignoreCase = true)) {
+                    viewModel.confirmOrderItem(order._id, item.productId) { success, msg ->
+                        Toast.makeText(requireContext(), if (success) "Đã xác nhận sản phẩm" else msg, Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    viewModel.rejectOrderItem(order._id, item.productId) { success, msg ->
+                        Toast.makeText(requireContext(), if (success) "Đã từ chối sản phẩm" else msg, Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+        )
+        binding.rvAdminOrders.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvAdminOrders.adapter = orderAdapter
     }
 
     private fun setupListeners() {
@@ -91,8 +100,18 @@ class AdminOrderFragment : Fragment() {
                 launch {
                     viewModel.allOrders.collect { orders ->
                         orderAdapter.submitList(orders)
+                        binding.tvAdminOrderCount.text = orders.size.toString()
+                        val revenue = orders.sumOf { it.totalPrice }
+                        binding.tvAdminRevenue.text = "${formatter.format(revenue)} \u20ab"
+
                         binding.tvEmptyAdminOrders.visibility = if (orders.isEmpty()) View.VISIBLE else View.GONE
                         binding.rvAdminOrders.visibility = if (orders.isEmpty()) View.GONE else View.VISIBLE
+                    }
+                }
+
+                launch {
+                    viewModel.notificationEvent.collect { message ->
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
                     }
                 }
 

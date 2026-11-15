@@ -18,65 +18,13 @@ interface ApiService {
     @GET("auth/profile")
     suspend fun getCurrentUser(): Response<UserDetailResponse>
 
-    @GET("auth/me")
-    suspend fun getCurrentUserMe(): Response<UserDetailResponse>
-
-    @GET("user/me")
-    suspend fun getUserMe(): Response<UserDetailResponse>
-
-    @GET("users/me")
-    suspend fun getUsersMe(): Response<UserDetailResponse>
-
-    @GET("auth/user")
-    suspend fun getCurrentUserAuthUser(): Response<UserDetailResponse>
-
     @PUT("auth/profile")
     suspend fun updateProfile(
         @Body request: Map<String, String>
     ): Response<UserDetailResponse>
 
-    @PUT("auth/user")
-    suspend fun updateUserProfile(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @PUT("auth/u")
-    suspend fun updateProfileU(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @POST("auth/u")
-    suspend fun updateProfileUPost(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @PUT("auth/user/u")
-    suspend fun updateUserProfileU(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @POST("auth/user/u")
-    suspend fun updateUserProfileUPost(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @PUT("auth/update")
-    suspend fun updateProfileUpdate(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @POST("auth/update")
-    suspend fun updateProfileUpdatePost(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @PUT("users/u")
-    suspend fun updateUsersU(
-        @Body request: Map<String, String>
-    ): Response<UserDetailResponse>
-
-    @PUT("users/update")
-    suspend fun updateUsersUpdate(
+    @PUT("auth/user/role")
+    suspend fun updateUserRole(
         @Body request: Map<String, String>
     ): Response<UserDetailResponse>
 
@@ -95,7 +43,7 @@ interface ApiService {
 
 
     // ==========================================
-    // 2. CART ROUTES (cart_2.js)
+    // 2. CART ROUTES (cart.js)
     // ==========================================
     @GET("cart/g")
     suspend fun getCart(): Response<CartApiResponse>
@@ -116,7 +64,7 @@ interface ApiService {
 
 
     // ==========================================
-    // 4. ORDER ROUTES (order_2.js)
+    // 4. ORDER ROUTES (order.js)
     // ==========================================
     @POST("orders/c")
     suspend fun createOrder(
@@ -129,25 +77,30 @@ interface ApiService {
     @GET("orders/seller/g")
     suspend fun getAllOrders(): Response<OrderListResponse>
 
+    @PUT("orders/confirm")
+    suspend fun confirmOrder(
+        @Body request: UpdateOrderStatusRequest
+    ): Response<OrderCreateResponse>
+
+    @PUT("orders/reject")
+    suspend fun rejectOrder(
+        @Body request: UpdateOrderStatusRequest
+    ): Response<OrderCreateResponse>
+
     @PUT("orders/cancel")
     suspend fun cancelOrder(
         @Body request: CancelOrderRequest
     ): Response<CancelOrderResponse>
 
-    @PUT("orders/u")
-    suspend fun updateOrderStatus(
-        @Body request: UpdateOrderStatusRequest
-    ): Response<OrderCreateResponse>
+    @PUT("orders/confirm-item")
+    suspend fun confirmOrderItem(
+        @Body request: Map<String, String>
+    ): Response<BaseApiResponse>
 
-    @PUT("orders/status")
-    suspend fun updateOrderStatusStatus(
-        @Body request: UpdateOrderStatusRequest
-    ): Response<OrderCreateResponse>
-
-    @PUT("orders/update")
-    suspend fun updateOrderStatusUpdate(
-        @Body request: UpdateOrderStatusRequest
-    ): Response<OrderCreateResponse>
+    @PUT("orders/reject-item")
+    suspend fun rejectOrderItem(
+        @Body request: Map<String, String>
+    ): Response<BaseApiResponse>
 
 
     // ==========================================
@@ -166,7 +119,11 @@ interface ApiService {
 
     @GET("products/g")
     suspend fun getAllProducts(
-        @Query("page") page: Int = 1
+        @Query("page") page: Int = 1,
+        @Query("isAdmin") isAdmin: String = "true",
+        @Query("all") all: String? = "true",
+        @Query("status") status: String? = "all",
+        @Query("includeOutOfStock") includeOutOfStock: String? = "true"
     ): Response<ProductListResponse>
 
     @PUT("products/u")

@@ -1,11 +1,14 @@
 package com.example.vlu_campusmarket.ui.fragment
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.vlu_campusmarket.R
@@ -35,6 +38,7 @@ class MenuFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Menu"
 
         val sessionManager = SessionManager(requireContext())
         val userRole = sessionManager.fetchUser()?.role ?: ""
@@ -67,6 +71,17 @@ class MenuFragment : Fragment() {
                 .commit()
         }
 
+        val isDarkMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        binding.switchDarkMode.isChecked = isDarkMode
+
+        binding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            }
+        }
+
         binding.btnMenuLogout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle("Đăng xuất")
@@ -85,6 +100,11 @@ class MenuFragment : Fragment() {
                 .setNegativeButton("Hủy", null)
                 .show()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Menu"
     }
 
     override fun onDestroyView() {

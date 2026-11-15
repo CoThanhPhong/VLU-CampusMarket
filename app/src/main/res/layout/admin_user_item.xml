@@ -9,34 +9,35 @@
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
     app:strokeWidth="1dp"
-    app:strokeColor="#E2E8F0">
+    app:strokeColor="@color/divider_color"
+    app:cardBackgroundColor="@color/card_background">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/ic_menu"
-            app:tint="#2563EB" />
+        <CheckBox
+            android:id="@+id/cbSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:layout_marginStart="12dp">
+            android:layout_marginStart="8dp">
 
             <TextView
                 android:id="@+id/tvUserName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Tên sinh viên"
-                android:textColor="#1E293B"
+                android:textColor="@color/text_primary"
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
@@ -45,28 +46,48 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="MSSV: 20700000"
-                android:textColor="#64748B"
+                android:textColor="@color/text_secondary"
                 android:textSize="13sp"
                 android:layout_marginTop="2dp" />
 
             <TextView
-                android:id="@+id/tvUserEmail"
+                android:id="@+id/tvUserRole"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="email@vanlanguni.vn"
-                android:textColor="#64748B"
+                android:text="Role: STUDENT"
+                android:textColor="#2563EB"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDeleteUser"
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Xóa"
-            android:textSize="12sp"
-            app:backgroundTint="#EF4444"
-            app:cornerRadius="6dp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeRole"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Đổi Role"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                app:backgroundTint="#2563EB"
+                app:cornerRadius="6dp"
+                android:layout_marginBottom="4dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteUser"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Xóa"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                app:backgroundTint="#EF4444"
+                app:cornerRadius="6dp" />
+        </LinearLayout>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

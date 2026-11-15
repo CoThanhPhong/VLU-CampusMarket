@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -66,10 +67,21 @@ class ProductDetailFragment : Fragment() {
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Thông tin sản phẩm"
+        product?.let { refreshLatestProduct(it.safeId) }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val item = product ?: return
+        val item = product
+        if (item == null || item.safeId.isEmpty() || (item.price <= 0 && item.name.startsWith("Sản phẩm ("))) {
+            Toast.makeText(requireContext(), "Sản phẩm không tồn tại hoặc đã bị xóa!", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.popBackStack()
+            return
+        }
         bindProductData(item)
 
         binding.cardAuthor.setOnClickListener {
@@ -149,10 +161,7 @@ class ProductDetailFragment : Fragment() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        product?.let { refreshLatestProduct(it.safeId) }
-    }
+
 
     private fun refreshLatestProduct(productId: String) {
         if (productId.isEmpty()) return
@@ -211,6 +220,12 @@ class ProductDetailFragment : Fragment() {
                             db.productDao().insertProducts(listOf(entity))
                         }
                     }
+                } else if (response.code() == 404 || (response.body() != null && !response.body()!!.success)) {
+                    val localEntity = db.productDao().getProductById(productId)
+                    if (localEntity == null || (localEntity.price <= 0 && localEntity.name.startsWith("Sản phẩm ("))) {
+                        Toast.makeText(requireContext(), "Sản phẩm không tồn tại hoặc đã bị xóa!", Toast.LENGTH_SHORT).show()
+                        parentFragmentManager.popBackStack()
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -221,7 +236,7 @@ class ProductDetailFragment : Fragment() {
     private fun bindProductData(item: ProductModel) {
         binding.tvDetailName.text = item.name
         binding.tvDetailPrice.text = "${formatter.format(item.price)} \u20ab"
-        binding.tvDetailDeviceType.text = item.deviceType
+        binding.tvDetailDeviceType.text = item.formattedDeviceType
         binding.tvDetailLocal.text = if (item.local.startsWith("Cơ sở")) item.local else "Cơ sở: ${item.local}"
         binding.tvDetailStock.text = "Kho: ${item.amount} máy"
         binding.tvDetailDescription.text = item.description?.ifEmpty { "Không có mô tả chi tiết." } ?: "Không có mô tả chi tiết."
@@ -273,6 +288,11 @@ class ProductDetailFragment : Fragment() {
     }
 
     private fun addToCartAndNotify(productId: String, redirectToCart: Boolean) {
+        val currentProd = product
+        if (currentProd == null || currentProd.safeId.isEmpty() || (currentProd.price <= 0 && currentProd.name.startsWith("Sản phẩm ("))) {
+            Toast.makeText(requireContext(), "Sản phẩm không tồn tại hoặc đã bị xóa!", Toast.LENGTH_SHORT).show()
+            return
+        }
         lifecycleScope.launch {
             try {
                 val db = AppDatabase.getDatabase(requireContext())

@@ -2,82 +2,266 @@ package com.example.vlu_campusmarket.ui.main
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
+import com.example.vlu_campusmarket.R
 
 class WaveBottomBar @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
-) : View(context, attrs, defStyleAttr) {
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : ConstraintLayout(context, attrs, defStyleAttr) {
 
-    private val mPath = Path()
-    private val mPaint = Paint().apply {
-        color = Color.parseColor("#E11D48") // Đỏ Văn Lang
+    private val primaryColor = Color.parseColor("#E11D48")
+    private val inactiveColor = Color.parseColor("#94A3B8")
+
+    private val isDarkMode = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = if (isDarkMode) Color.parseColor("#1E293B") else Color.WHITE
         style = Paint.Style.FILL
-        isAntiAlias = true
+        setShadowLayer(
+            10f * resources.displayMetrics.density,
+            0f,
+            -3f * resources.displayMetrics.density,
+            Color.argb(if (isDarkMode) 60 else 25, 0, 0, 0)
+        )
     }
 
-    private var mCurvedCenterX = 0f
+    private val path = Path()
+    private var currentSelectedIndex = 0
+    var onItemSelected: ((Int) -> Unit)? = null
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        if (mCurvedCenterX == 0f) {
-            val tabWidth = w / 5f
-            mCurvedCenterX = tabWidth / 2f
+    private val tabItems = listOf(
+        TabItem(R.drawable.ic_home, "Trang chủ"),
+        TabItem(R.drawable.ic_cart, "Giỏ hàng"),
+        TabItem(R.drawable.ic_add, "Tạo bài"),
+        TabItem(R.drawable.ic_order, "Hóa đơn"),
+        TabItem(R.drawable.ic_menu, "Menu")
+    )
+
+    private val tabViews = mutableListOf<View>()
+    private lateinit var floatingBubble: CardView
+    private lateinit var floatingIcon: ImageView
+    private lateinit var tabsContainer: LinearLayout
+
+    private var animator: ValueAnimator? = null
+    private var bubbleCenterX = 0f
+    private var isInitialized = false
+
+    init {
+        setWillNotDraw(false)
+        setBackgroundColor(Color.TRANSPARENT)
+        clipChildren = false
+        clipToPadding = false
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
+        setupViews()
+    }
+
+    private fun setupViews() {
+        tabsContainer = LinearLayout(context).apply {
+            id = generateViewId()
+            orientation = LinearLayout.HORIZONTAL
+            weightSum = 5f
+            setBackgroundColor(Color.TRANSPARENT)
+            clipChildren = false
+            clipToPadding = false
+            layoutParams = LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                dpTypeToPx(72)
+            ).apply {
+                bottomToBottom = LayoutParams.PARENT_ID
+                startToStart = LayoutParams.PARENT_ID
+                endToEnd = LayoutParams.PARENT_ID
+            }
+        }
+        addView(tabsContainer)
+
+        val bubbleSize = dpTypeToPx(56)
+        floatingBubble = CardView(context).apply {
+            layoutParams = LayoutParams(bubbleSize, bubbleSize)
+            radius = bubbleSize / 2f
+            cardElevation = dpTypeToPx(6).toFloat()
+            setCardBackgroundColor(primaryColor) // VLU Red distinct background for active FAB
+            useCompatPadding = false
+            preventCornerOverlap = false
+            clipChildren = false
+            clipToPadding = false
+        }
+
+        floatingIcon = ImageView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                dpTypeToPx(24),
+                dpTypeToPx(24)
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+            setColorFilter(Color.WHITE) // White icon on red background
+        }
+
+        floatingBubble.addView(floatingIcon)
+        addView(floatingBubble)
+
+        tabItems.forEachIndexed { index, item ->
+            val tabView = LayoutInflater.from(context)
+                .inflate(R.layout.item_wave_tab, tabsContainer, false).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        1f
+                    )
+                    setOnClickListener {
+                        selectTab(index, true)
+                        onItemSelected?.invoke(index)
+                    }
+                }
+
+            val iconView = tabView.findViewById<ImageView>(R.id.tabIcon)
+            val textView = tabView.findViewById<TextView>(R.id.tabText)
+            iconView.setImageResource(item.iconRes)
+            textView.text = item.title
+
+            tabViews.add(tabView)
+            tabsContainer.addView(tabView)
+        }
+    }
+
+    override fun onLayout(
+        changed: Boolean,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int
+    ) {
+        super.onLayout(changed, left, top, right, bottom)
+        if (!isInitialized && tabViews.isNotEmpty()) {
+            isInitialized = true
+            updateTabSelection(currentSelectedIndex, false)
+        }
+    }
+
+    fun selectTab(index: Int, animate: Boolean) {
+        if (index !in tabItems.indices) return
+        currentSelectedIndex = index
+        updateTabSelection(index, animate)
+    }
+
+    private fun updateTabSelection(index: Int, animate: Boolean) {
+        if (tabViews.isEmpty() || !isInitialized) return
+
+        val tabView = tabViews[index]
+        val targetX = tabView.left + tabView.width / 2f
+
+        floatingIcon.setImageResource(tabItems[index].iconRes)
+
+        val barHeight = dpTypeToPx(72).toFloat()
+        val barTop = height - barHeight
+
+        floatingBubble.y = barTop - floatingBubble.height / 2f + dpTypeToPx(4)
+
+        animator?.cancel()
+
+        if (animate && bubbleCenterX != 0f) {
+            animator = ValueAnimator.ofFloat(bubbleCenterX, targetX).apply {
+                duration = 350L
+                interpolator = DecelerateInterpolator()
+                addUpdateListener { animation ->
+                    bubbleCenterX = animation.animatedValue as Float
+                    floatingBubble.x = bubbleCenterX - floatingBubble.width / 2f
+                    invalidate()
+                }
+                start()
+            }
+        } else {
+            bubbleCenterX = targetX
+            floatingBubble.x = targetX - floatingBubble.width / 2f
+            invalidate()
+        }
+
+        tabViews.forEachIndexed { i, view ->
+            val iconView = view.findViewById<ImageView>(R.id.tabIcon)
+            val textView = view.findViewById<TextView>(R.id.tabText)
+            if (i == index) {
+                iconView.visibility = INVISIBLE
+                textView.visibility = VISIBLE
+                textView.setTextColor(primaryColor)
+            } else {
+                iconView.visibility = VISIBLE
+                iconView.setColorFilter(inactiveColor)
+                textView.visibility = VISIBLE
+                textView.setTextColor(inactiveColor)
+            }
         }
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        mPath.reset()
+        path.reset()
 
         val width = width.toFloat()
         val height = height.toFloat()
+        if (width <= 0f || height <= 0f) return
 
-        // Tọa độ chuẩn tạo lòng chảo trắng ôm trọn FAB
-        val topMargin = 75f      // Mép trên nền đỏ lùi xuống dưới
-        val curveRadius = 95f    // Bán kính miệng lòng chảo
-        val curveDepth = 85f     // Độ sâu lõm xuống của lòng chảo màu trắng
+        val barHeight = dpTypeToPx(72).toFloat()
+        val barTop = height - barHeight
+        val notchRadius = dpTypeToPx(46).toFloat()
+        val notchDepth = dpTypeToPx(28).toFloat()
 
-        mPath.moveTo(0f, height)
-        mPath.lineTo(0f, topMargin)
-        mPath.lineTo(mCurvedCenterX - curveRadius, topMargin)
+        val centerX = bubbleCenterX
 
-        // 1. Uốn cong vuốt mượt từ mép đỏ chìm xuống lòng chảo trắng
-        mPath.cubicTo(
-            mCurvedCenterX - (curveRadius * 0.45f), topMargin,
-            mCurvedCenterX - (curveRadius * 0.4f), topMargin + curveDepth,
-            mCurvedCenterX, topMargin + curveDepth
+        path.moveTo(0f, barTop)
+
+        val startX = (centerX - notchRadius).coerceAtLeast(0f)
+        val endX = (centerX + notchRadius).coerceAtMost(width)
+
+        path.lineTo(startX, barTop)
+
+        val leftControlX = (centerX - notchRadius * 0.5f).coerceAtLeast(startX)
+        val rightControlX = (centerX + notchRadius * 0.5f).coerceAtMost(endX)
+
+        path.cubicTo(
+            leftControlX, barTop,
+            leftControlX, barTop + notchDepth,
+            centerX.coerceIn(startX, endX), barTop + notchDepth
         )
 
-        // 2. Uốn cong đi từ đáy lòng chảo trắng trôi lên mép đỏ bên phải
-        mPath.cubicTo(
-            mCurvedCenterX + (curveRadius * 0.4f), topMargin + curveDepth,
-            mCurvedCenterX + (curveRadius * 0.45f), topMargin,
-            mCurvedCenterX + curveRadius, topMargin
+        path.cubicTo(
+            rightControlX, barTop + notchDepth,
+            rightControlX, barTop,
+            endX, barTop
         )
 
-        mPath.lineTo(width, topMargin)
-        mPath.lineTo(width, height)
-        mPath.close()
+        path.lineTo(width, barTop)
+        path.lineTo(width, height)
+        path.lineTo(0f, height)
+        path.close()
 
-        canvas.drawPath(mPath, mPaint)
+        canvas.drawPath(path, paint)
     }
 
-    fun animateCurveTo(targetX: Float) {
-        val animator = ValueAnimator.ofFloat(mCurvedCenterX, targetX)
-        animator.duration = 280
-        animator.interpolator = DecelerateInterpolator()
-        animator.addUpdateListener { animation ->
-            mCurvedCenterX = animation.animatedValue as Float
-            invalidate()
-        }
-        animator.start()
+    override fun onDetachedFromWindow() {
+        animator?.cancel()
+        animator = null
+        super.onDetachedFromWindow()
     }
 
-    fun setCurvePosition(targetX: Float) {
-        mCurvedCenterX = targetX
-        invalidate()
+    private fun dpTypeToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
     }
+
+    data class TabItem(
+        val iconRes: Int,
+        val title: String
+    )
 }

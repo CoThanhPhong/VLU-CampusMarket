@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F6FA"
+    android:background="@color/app_background"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -18,6 +18,7 @@
             android:layout_height="wrap_content"
             app:cardCornerRadius="16dp"
             app:cardElevation="6dp"
+            app:cardBackgroundColor="@color/card_background"
             app:cardUseCompatPadding="true"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -46,7 +47,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
                     android:text="Đăng nhập"
-                    android:textColor="#1A1A1A"
+                    android:textColor="@color/text_primary"
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
@@ -81,7 +82,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Tên đăng nhập"
-                            android:textColor="#4A4A4A"
+                            android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
 
                         <ImageView
@@ -103,6 +104,8 @@
                         android:layout_height="48dp"
                         android:background="@drawable/bg_edit_text"
                         android:hint="MSSV"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
                         android:inputType="text"
                         android:paddingHorizontal="16dp"
                         android:textSize="14sp" />
@@ -120,7 +123,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="6dp"
                         android:text="Mật khẩu"
-                        android:textColor="#4A4A4A"
+                        android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
                     <EditText
@@ -129,6 +132,8 @@
                         android:layout_height="48dp"
                         android:background="@drawable/bg_edit_text"
                         android:hint="Mật khẩu trang online.vlu"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
                         android:inputType="textPassword"
                         android:paddingHorizontal="16dp"
                         android:textSize="14sp" />
@@ -141,7 +146,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
                     android:text="Ghi nhớ đăng nhập"
-                    android:textColor="#4A4A4A"
+                    android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
                 <!-- Nút Đăng nhập -->

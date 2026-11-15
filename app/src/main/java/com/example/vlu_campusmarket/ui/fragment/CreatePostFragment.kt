@@ -2,6 +2,8 @@ package com.example.vlu_campusmarket.ui.fragment
 
 import android.R
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
@@ -11,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -29,6 +32,7 @@ import com.example.vlu_campusmarket.ui.product.CreatePostViewModel
 import com.example.vlu_campusmarket.utils.loadImageWithGlide
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class CreatePostFragment : Fragment() {
 
@@ -93,9 +97,39 @@ class CreatePostFragment : Fragment() {
     private fun uriToBase64(context: Context, uri: Uri): String? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)
-            val bytes = inputStream?.readBytes()
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
             inputStream?.close()
-            if (bytes != null) {
+
+            if (originalBitmap != null) {
+                val maxSize = 800
+                val width = originalBitmap.width
+                val height = originalBitmap.height
+                val bitmapToCompress = if (width > maxSize || height > maxSize) {
+                    val ratio = width.toFloat() / height.toFloat()
+                    val targetWidth: Int
+                    val targetHeight: Int
+                    if (ratio > 1) {
+                        targetWidth = maxSize
+                        targetHeight = (maxSize / ratio).toInt()
+                    } else {
+                        targetHeight = maxSize
+                        targetWidth = (maxSize * ratio).toInt()
+                    }
+                    Bitmap.createScaledBitmap(originalBitmap, targetWidth, targetHeight, true)
+                } else {
+                    originalBitmap
+                }
+
+                val outputStream = ByteArrayOutputStream()
+                bitmapToCompress.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+                val bytes = outputStream.toByteArray()
+                outputStream.close()
+
+                if (bitmapToCompress != originalBitmap) {
+                    bitmapToCompress.recycle()
+                }
+                originalBitmap.recycle()
+
                 val base64String = Base64.encodeToString(bytes, Base64.NO_WRAP)
                 "data:image/jpeg;base64,$base64String"
             } else {
@@ -116,6 +150,12 @@ class CreatePostFragment : Fragment() {
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+        val title = if (editingProduct != null) "Chỉnh sửa sản phẩm" else "Tạo bài đăng mới"
+        (activity as? AppCompatActivity)?.supportActionBar?.title = title
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -134,12 +174,12 @@ class CreatePostFragment : Fragment() {
             selectedImageUrls.addAll(product.imageList)
             thumbnailAdapter.notifyDataSetChanged()
 
-            binding.btnSubmitPost.text = "CẬP NHẬT BÀI ĐĂNG"
+            binding.btnSubmitPost.text = "CẬP NHẬT"
         }
     }
 
     private fun setupDropdowns() {
-        val deviceTypes = arrayOf("Điện thoại", "Tablet", "Mac", "Laptop")
+        val deviceTypes = arrayOf("Điện thoại", "Tablet", "Macbook", "Laptop")
         val deviceAdapter = ArrayAdapter(requireContext(), R.layout.simple_dropdown_item_1line, deviceTypes)
         binding.actDeviceType.setAdapter(deviceAdapter)
         binding.actDeviceType.setText(deviceTypes[0], false)
@@ -153,7 +193,7 @@ class CreatePostFragment : Fragment() {
             val mappedDeviceType = when (product.deviceType.lowercase()) {
                 "mobile", "phone", "điện thoại" -> "Điện thoại"
                 "tablet" -> "Tablet"
-                "mac" -> "Mac"
+                "mac", "macbook" -> "Macbook"
                 "laptop" -> "Laptop"
                 else -> "Điện thoại"
             }
@@ -212,16 +252,20 @@ class CreatePostFragment : Fragment() {
             val description = binding.etDescription.text.toString().trim()
 
             if (name.isEmpty() || priceStr.isEmpty() || amountStr.isEmpty()) {
-                Toast.makeText(requireContext(), "Vui lòng nhập đầy đủ tên, giá và số lượng", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Vui lòng nhập đầy đủ các thông tin bắt buộc (*)", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (selectedImageUrls.isEmpty()) {
-                Toast.makeText(requireContext(), "Vui lòng thêm ít nhất 1 hình ảnh cho sản phẩm", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Vui lòng chọn hoặc thêm ít nhất 1 hình ảnh sản phẩm (*)", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val price = priceStr.toDoubleOrNull() ?: 0.0
+            if (price < 100000.0) {
+                Toast.makeText(requireContext(), "Giá bán sản phẩm tối thiểu phải từ 100.000 VNĐ trở lên", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
             val amount = amountStr.toIntOrNull() ?: 1
 
             binding.btnSubmitPost.isEnabled = false
@@ -229,14 +273,16 @@ class CreatePostFragment : Fragment() {
 
             if (editingProduct != null) {
                 viewModel.updateProduct(
-                    id = editingProduct!!.safeId,
+                    productId = editingProduct!!.safeId,
                     name = name,
                     price = price,
                     deviceType = deviceType,
                     local = local,
                     amount = amount,
                     description = description,
-                    img = selectedImageUrls.toList()
+                    img = selectedImageUrls.toList(),
+                    existingStatus = editingProduct?.status,
+                    existingAuthor = editingProduct?.author
                 ) { success, msg ->
                     binding.btnSubmitPost.isEnabled = true
                     binding.btnSubmitPost.text = "CẬP NHẬT BÀI ĐĂNG"

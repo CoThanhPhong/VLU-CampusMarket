@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC"
+    android:background="@color/app_background"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,15 +12,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tạo Bài Đăng Bán Thiết Bị VLU"
-            android:textColor="#E11D48"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
 
         <!-- Phần chọn ảnh (Tối đa 5 ảnh: File & Link giống Web) -->
         <TextView
@@ -53,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
-                android:text="Chọn file ảnh"
+                android:text="Chọn file ảnh *"
                 android:textColor="#E11D48"
                 app:strokeColor="#E11D48"
                 app:cornerRadius="8dp" />
@@ -89,7 +80,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:hint="Tên sản phẩm">
+            android:hint="Tên sản phẩm *">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etProductName"
                 android:layout_width="match_parent"
@@ -102,7 +93,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:hint="Giá bán (VNĐ)">
+            android:hint="Giá bán (VNĐ >= 100.000 đ) *">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etProductPrice"
                 android:layout_width="match_parent"
@@ -184,6 +175,11 @@
             android:textStyle="bold"
             app:backgroundTint="#E11D48"
             app:cornerRadius="8dp" />
+
+        <!-- Ô trống 30dp đẩy nội dung lên cao không bị che bởi bottom bar -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="110dp" />
 
     </LinearLayout>
 </ScrollView>

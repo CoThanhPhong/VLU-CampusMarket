@@ -17,7 +17,7 @@
         android:src="@drawable/ic_placeholder_product"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
         app:strokeWidth="1dp"
-        app:strokeColor="#E2E8F0" />
+        app:strokeColor="@color/divider_color" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -31,7 +31,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tên sản phẩm thiết bị"
-            android:textColor="#1E293B"
+            android:textColor="@color/text_primary"
             android:textSize="13sp"
             android:textStyle="bold"
             android:maxLines="2"
@@ -41,10 +41,32 @@
             android:id="@+id/tvSubProductDetails"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="SL: 1 | 350,000 đ | Cơ sở 1\n Người đăng: Cổ Thanh Phong"
-            android:textColor="#64748B"
+            android:text="SL: 1 | 350,000 đ | Cơ sở 1"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp"
-            android:layout_marginTop="3dp" />
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/tvSubProductStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Trạng thái: Chờ xử lý"
+            android:textColor="#D97706"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp"
+            android:visibility="gone" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/ivSubItemMenu"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_more_vert"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="4dp"
+        android:contentDescription="Menu"
+        app:tint="@color/text_secondary"
+        android:visibility="gone" />
 
 </LinearLayout>

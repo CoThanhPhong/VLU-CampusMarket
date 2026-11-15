@@ -4,8 +4,17 @@ data class OrderItemModel(
     val product: Any = "",
     val quantity: Int = 1,
     val price: Double = 0.0,
-    val local: String = ""
+    val local: String = "",
+    val status: String? = null
 ) {
+    val currentStatus: String
+        get() {
+            if (!status.isNullOrEmpty()) return status
+            return when (product) {
+                is Map<*, *> -> product["itemStatus"]?.toString() ?: product["status"]?.toString() ?: ""
+                else -> ""
+            }
+        }
     val productId: String
         get() = when (product) {
             is String -> product
@@ -46,6 +55,19 @@ data class OrderItemModel(
             else -> null
         }
 
+    val authorId: String
+        get() = when (product) {
+            is Map<*, *> -> {
+                val author = product["author"]
+                when (author) {
+                    is String -> author
+                    is Map<*, *> -> (author["_id"] ?: author["id"] ?: author["userId"])?.toString() ?: ""
+                    else -> ""
+                }
+            }
+            else -> ""
+        }
+
     val authorName: String?
         get() = when (product) {
             is Map<*, *> -> {
@@ -55,7 +77,6 @@ data class OrderItemModel(
                         val profile = author["profile"] as? Map<*, *>
                         profile?.get("name")?.toString() ?: author["name"]?.toString() ?: author["email"]?.toString()
                     }
-                    is String -> author
                     else -> null
                 }
             }
