@@ -53,20 +53,7 @@ class ProfileViewModel(
             _currentUser.value = user
             if (user != null) {
                 var userModel: UserModel? = null
-                var response = apiService.getCurrentUser()
-                if (!response.isSuccessful || response.body()?.success != true) {
-                    response = apiService.getCurrentUserMe()
-                }
-                if (!response.isSuccessful || response.body()?.success != true) {
-                    response = apiService.getUserMe()
-                }
-                if (!response.isSuccessful || response.body()?.success != true) {
-                    response = apiService.getUsersMe()
-                }
-                if (!response.isSuccessful || response.body()?.success != true) {
-                    response = apiService.getCurrentUserAuthUser()
-                }
-
+                val response = apiService.getCurrentUser()
                 if (response.isSuccessful && response.body()?.success == true) {
                     userModel = response.body()?.data
                 } else {
@@ -195,35 +182,7 @@ class ProfileViewModel(
                     "bio" to bio,
                     "avatar" to (avatar ?: "")
                 )
-                var response = apiService.updateProfile(request)
-                if (!response.isSuccessful) {
-                    response = apiService.updateUserProfile(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateProfileU(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateProfileUPost(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateUserProfileU(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateUserProfileUPost(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateProfileUpdate(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateProfileUpdatePost(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateUsersU(request)
-                }
-                if (!response.isSuccessful) {
-                    response = apiService.updateUsersUpdate(request)
-                }
-
+                val response = apiService.updateProfile(request)
                 if (response.isSuccessful && response.body()?.success == true) {
                     val updatedUser = response.body()?.data
                     if (updatedUser != null) {

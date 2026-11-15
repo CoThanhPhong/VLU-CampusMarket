@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -62,17 +62,14 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Trang chủ"
         viewModel.refreshData()
     }
 
     private fun setupRecyclerView() {
         productAdapter = ProductAdapter(
-<<<<<<< HEAD
-            userNamesProvider = { viewModel.userNames.value },
-=======
             userNamesMap = viewModel.userNames.value,
             userAvatarsMap = viewModel.userAvatars.value,
->>>>>>> features/optimize-leakCanary
             onRequestFetchUser = { userId ->
                 viewModel.fetchUserNameIfNeeded(userId)
             },
@@ -124,7 +121,7 @@ class HomeFragment : Fragment() {
                     R.id.chipAll -> "ALL"
                     R.id.chipPhone -> "Mobile"
                     R.id.chipTablet -> "Tablet"
-                    R.id.chipMac -> "Mac"
+                    R.id.chipMac -> "Macbook"
                     R.id.chipLaptop -> "Laptop"
                     else -> "ALL"
                 }
@@ -140,7 +137,7 @@ class HomeFragment : Fragment() {
                 launch {
                     viewModel.filteredProducts.collect { products ->
                         productAdapter.submitList(products)
-                        binding.tvTitle.text = "Danh sách bài đăng bán (${products.size})"
+                        binding.tvTitle.text = "Danh sách sản phẩm (${products.size})"
                     }
                 }
 
@@ -150,17 +147,6 @@ class HomeFragment : Fragment() {
                     }
                 }
 
-<<<<<<< HEAD
-                // Hiển thị lỗi đồng bộ (mất kết nối server...) thay vì im lặng
-                launch {
-                    viewModel.messages.collect { msg ->
-                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
-                    }
-                }
-
-                // Cập nhật lại adapter khi có tên người dùng mới tải về từ API
-=======
->>>>>>> features/optimize-leakCanary
                 launch {
                     viewModel.userNames.collect { names ->
                         productAdapter.updateUserNames(names)

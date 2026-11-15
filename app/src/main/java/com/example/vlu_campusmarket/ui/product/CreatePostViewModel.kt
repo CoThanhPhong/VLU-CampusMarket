@@ -7,13 +7,12 @@ import com.example.vlu_campusmarket.data.local.dao.UserDao
 import com.example.vlu_campusmarket.data.local.entity.ProductEntity
 import com.example.vlu_campusmarket.data.models.ProductModel
 import com.example.vlu_campusmarket.data.remote.ApiService
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-
-import com.google.gson.Gson
 
 class CreatePostViewModel(
     private val apiService: ApiService,
@@ -28,7 +27,7 @@ class CreatePostViewModel(
         return when (raw.trim().lowercase()) {
             "điện thoại", "mobile", "phone" -> "mobile"
             "tablet" -> "tablet"
-            "mac" -> "mac"
+            "mac", "macbook", "mac book" -> "mac"
             "laptop" -> "laptop"
             else -> "mobile"
         }
@@ -47,66 +46,62 @@ class CreatePostViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val authorId = userDao.getLoggedInUser().firstOrNull()?.id ?: "anonymous"
+                val formattedDeviceType = mapDeviceTypeToEnum(deviceType)
+                val imageUrls = when (img) {
+                    is List<*> -> img.filterIsInstance<String>()
+                    is String -> listOf(img)
+                    else -> emptyList()
+                }
+
+                val currentUser = userDao.getLoggedInUser().firstOrNull()
+                val validAuthorId = currentUser?.id?.takeIf { it.isNotBlank() }
+
                 val newProduct = ProductModel(
                     _id = null,
                     name = name,
-                    description = description,
                     price = price,
-                    amount = amount,
+                    deviceType = formattedDeviceType,
                     local = local,
-                    img = img,
-                    startDate = null,
-                    status = "Còn hàng",
-                    deviceType = mapDeviceTypeToEnum(deviceType),
-                    endDate = null,
-                    author = authorId
+                    amount = amount,
+                    description = description,
+                    img = imageUrls,
+                    status = "Chờ duyệt",
+                    author = validAuthorId ?: ""
                 )
 
                 val response = apiService.createProducts(listOf(newProduct))
-                _isLoading.value = false
-
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val createdList = response.body()?.data ?: emptyList()
-                    val entities = createdList.map { model ->
-                        val imgStr = if (model.imageList.isNotEmpty()) {
-                            Gson().toJson(model.imageList)
-                        } else if (img is List<*>) {
-                            Gson().toJson(img)
-                        } else {
-                            img.toString()
-                        }
-                        ProductEntity(
-                            _id = if (model.safeId.isNotEmpty()) model.safeId else "",
-                            name = model.name.ifEmpty { name },
-                            description = model.description ?: description,
-                            price = if (model.price > 0) model.price else price,
-                            amount = if (model.amount > 0) model.amount else amount,
-                            local = model.local.ifEmpty { local },
-                            img = imgStr,
-                            status = model.status ?: "Còn hàng",
-                            deviceType = model.deviceType.ifEmpty { mapDeviceTypeToEnum(deviceType) },
-                            author = if (model.authorId.isNotEmpty()) model.authorId else authorId
-                        )
-                    }.filter { it._id.isNotEmpty() }
+                    val serverCreated = response.body()?.data?.firstOrNull()
+                    val productId = serverCreated?.safeId?.ifEmpty { "prod_${System.currentTimeMillis()}" } ?: "prod_${System.currentTimeMillis()}"
 
-                    if (entities.isNotEmpty()) {
-                        productDao.insertProducts(entities)
-                    }
-                    onResult(true, "Tạo bài đăng thành công!")
+                    val entity = ProductEntity(
+                        _id = productId,
+                        name = newProduct.name,
+                        description = newProduct.description,
+                        price = newProduct.price,
+                        amount = newProduct.amount,
+                        local = newProduct.local,
+                        img = if (imageUrls.isNotEmpty()) Gson().toJson(imageUrls) else newProduct.imageUrl,
+                        status = newProduct.status,
+                        deviceType = newProduct.deviceType,
+                        author = serverCreated?.authorId ?: validAuthorId ?: ""
+                    )
+                    productDao.insertProducts(listOf(entity))
+
+                    onResult(true, "Đăng bài thành công! Đang chờ Admin kiểm duyệt.")
                 } else {
-                    val msg = response.body()?.message ?: "Tạo bài đăng thất bại"
-                    onResult(false, msg)
+                    onResult(false, "Đăng bài thất bại: ${response.errorBody()?.string() ?: "Lỗi server"}")
                 }
             } catch (e: Exception) {
+                onResult(false, e.message ?: "Lỗi kết nối mạng")
+            } finally {
                 _isLoading.value = false
-                onResult(false, e.message ?: "Lỗi kết nối đến server")
             }
         }
     }
 
     fun updateProduct(
-        id: String,
+        productId: String,
         name: String,
         price: Double,
         deviceType: String,
@@ -114,63 +109,60 @@ class CreatePostViewModel(
         amount: Int,
         description: String,
         img: Any,
+        existingStatus: String?,
+        existingAuthor: Any?,
         onResult: (Boolean, String) -> Unit
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val authorId = userDao.getLoggedInUser().firstOrNull()?.id ?: "anonymous"
+                val formattedDeviceType = mapDeviceTypeToEnum(deviceType)
+                val imageUrls = when (img) {
+                    is List<*> -> img.filterIsInstance<String>()
+                    is String -> listOf(img)
+                    else -> emptyList()
+                }
+
+                val currentUser = userDao.getLoggedInUser().firstOrNull()
+                val validAuthorId = existingAuthor ?: currentUser?.id?.takeIf { it.isNotBlank() } ?: ""
+
                 val updatedProduct = ProductModel(
-                    _id = id,
+                    _id = productId,
                     name = name,
-                    description = description,
                     price = price,
-                    amount = amount,
+                    deviceType = formattedDeviceType,
                     local = local,
-                    img = img,
-                    startDate = null,
-                    status = "Còn hàng",
-                    deviceType = mapDeviceTypeToEnum(deviceType),
-                    endDate = null,
-                    author = authorId
+                    amount = amount,
+                    description = description,
+                    img = imageUrls,
+                    status = existingStatus ?: "Chờ duyệt",
+                    author = validAuthorId
                 )
 
                 val response = apiService.updateProduct(updatedProduct)
-                _isLoading.value = false
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val model = response.body()?.data
-                    val imgStr = if (model != null && model.imageList.isNotEmpty()) {
-                        Gson().toJson(model.imageList)
-                    } else if (img is List<*>) {
-                        Gson().toJson(img)
-                    } else {
-                        img.toString()
-                    }
-
-                    val finalId = if (model != null && model.safeId.isNotEmpty()) model.safeId else id
+                if (response.isSuccessful) {
                     val entity = ProductEntity(
-                        _id = finalId,
-                        name = model?.name?.ifEmpty { name } ?: name,
-                        description = model?.description ?: description,
-                        price = if ((model?.price ?: 0.0) > 0) model!!.price else price,
-                        amount = if ((model?.amount ?: 0) > 0) model!!.amount else amount,
-                        local = model?.local?.ifEmpty { local } ?: local,
-                        img = imgStr,
-                        status = model?.status ?: "Còn hàng",
-                        deviceType = model?.deviceType?.ifEmpty { mapDeviceTypeToEnum(deviceType) } ?: mapDeviceTypeToEnum(deviceType),
-                        author = if (model != null && model.authorId.isNotEmpty()) model.authorId else authorId
+                        _id = productId,
+                        name = updatedProduct.name,
+                        description = updatedProduct.description,
+                        price = updatedProduct.price,
+                        amount = updatedProduct.amount,
+                        local = updatedProduct.local,
+                        img = if (imageUrls.isNotEmpty()) Gson().toJson(imageUrls) else updatedProduct.imageUrl,
+                        status = updatedProduct.status,
+                        deviceType = updatedProduct.deviceType,
+                        author = validAuthorId.toString()
                     )
                     productDao.insertProducts(listOf(entity))
 
-                    onResult(true, "Cập nhật bài đăng thành công!")
+                    onResult(true, "Cập nhật bài viết thành công!")
                 } else {
-                    val msg = response.body()?.message ?: "Cập nhật thất bại"
-                    onResult(false, msg)
+                    onResult(false, "Cập nhật thất bại: ${response.errorBody()?.string() ?: "Lỗi server"}")
                 }
             } catch (e: Exception) {
+                onResult(false, e.message ?: "Lỗi kết nối mạng")
+            } finally {
                 _isLoading.value = false
-                onResult(false, e.message ?: "Lỗi kết nối")
             }
         }
     }

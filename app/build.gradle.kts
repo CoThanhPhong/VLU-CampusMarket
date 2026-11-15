@@ -33,18 +33,17 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
 dependencies {
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("com.github.ibrahimsn98:NiceBottomBar:2.2")
 
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.firebase.crashlytics.buildtools)
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.gson)
@@ -55,7 +54,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
 
-    // OkHttp và Logging Interceptor (dùng để log mạng và đính kèm Cookie)
+    // OkHttp và Logging Interceptor
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
@@ -68,6 +67,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+    implementation("androidx.security:security-crypto:1.0.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

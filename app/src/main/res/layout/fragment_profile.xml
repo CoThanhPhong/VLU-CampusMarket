@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC"
+    android:background="@color/app_background"
     android:fillViewport="true">
 
     <LinearLayout
@@ -19,73 +19,82 @@
             android:layout_height="wrap_content"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_background"
             app:strokeWidth="1dp"
-            app:strokeColor="#E2E8F0">
+            app:strokeColor="@color/divider_color">
 
-            <LinearLayout
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:padding="24dp">
+                android:layout_height="wrap_content">
 
-                <!-- Avatar người dùng hình tròn chuẩn không lệch viền -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="90dp"
-                    android:layout_height="90dp"
-                    app:cardCornerRadius="45dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="2dp"
-                    app:strokeColor="#E11D48"
-                    app:cardBackgroundColor="@android:color/transparent">
+                <!-- Nút cây bút chỉnh sửa thông tin ở góc trên bên phải khung chứa tên và avatar -->
+                <ImageView
+                    android:id="@+id/btnEditAvatarBadge"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_pencil_outline"
+                    android:padding="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Chỉnh sửa hồ sơ"
+                    android:visibility="gone"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-                    <ImageView
-                        android:id="@+id/imgAvatar"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_user_profile" />
-                </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:id="@+id/tvUserName"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Sinh viên VLU"
-                    android:textColor="#1E293B"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="12dp" />
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:padding="24dp">
 
-                <TextView
-                    android:id="@+id/tvUserRole"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="STUDENT"
-                    android:textColor="#2563EB"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:background="#EFF6FF"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="4dp"
-                    android:layout_marginTop="6dp" />
+                    <!-- Avatar người dùng hình tròn -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="90dp"
+                        android:layout_height="90dp"
+                        app:cardCornerRadius="45dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="2dp"
+                        app:strokeColor="#E11D48"
+                        app:cardBackgroundColor="@android:color/transparent">
 
-            </LinearLayout>
+                        <ImageView
+                            android:id="@+id/imgAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_user_profile" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sinh viên VLU"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="12dp" />
+
+                    <TextView
+                        android:id="@+id/tvUserRole"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="STUDENT"
+                        android:textColor="#2563EB"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:background="#EFF6FF"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:layout_marginTop="6dp" />
+
+                </LinearLayout>
+            </FrameLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Nút Chỉnh sửa hồ sơ -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEditProfile"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="16dp"
-            android:text="CHỈNH SỬA HỒ SƠ"
-            android:textColor="#2563EB"
-            app:strokeColor="#2563EB"
-            app:cornerRadius="10dp"
-            android:visibility="gone" />
 
         <!-- Chi tiết hồ sơ -->
         <com.google.android.material.card.MaterialCardView
@@ -94,9 +103,9 @@
             android:layout_marginTop="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_background"
             app:strokeWidth="1dp"
-            app:strokeColor="#E2E8F0">
+            app:strokeColor="@color/divider_color">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -109,13 +118,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="MSSV: ---"
-                    android:textColor="#334155"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F1F5F9"
+                    android:background="@color/divider_color"
                     android:layout_marginVertical="10dp" />
 
                 <TextView
@@ -123,13 +132,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Email: ---"
-                    android:textColor="#334155"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F1F5F9"
+                    android:background="@color/divider_color"
                     android:layout_marginVertical="10dp" />
 
                 <TextView
@@ -137,13 +146,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Số điện thoại: ---"
-                    android:textColor="#334155"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F1F5F9"
+                    android:background="@color/divider_color"
                     android:layout_marginVertical="10dp" />
 
                 <TextView
@@ -151,7 +160,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Tiểu sử: ---"
-                    android:textColor="#334155"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -163,7 +172,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Sản phẩm của tôi (0)"
-            android:textColor="#1E293B"
+            android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginTop="20dp"
@@ -174,6 +183,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false" />
+
+        <!-- Ô trống 30dp đẩy nội dung lên cao không bị che bởi bottom bar -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="110dp" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

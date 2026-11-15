@@ -23,7 +23,7 @@ import com.google.gson.annotations.SerializedName
 
 data class ProductModel(
     @SerializedName(value = "_id", alternate = ["id", "productId"])
-    val _id: String? = null,
+    val _id: Any? = null,
     val name: String = "",
     val description: String? = "",
     val price: Double = 0.0,
@@ -37,7 +37,20 @@ data class ProductModel(
     val author: Any = ""
 ) {
     val safeId: String
-        get() = _id ?: ""
+        get() = when (_id) {
+            is String -> _id
+            is Map<*, *> -> (_id["\$oid"] ?: _id["_id"] ?: _id["id"])?.toString() ?: ""
+            else -> _id?.toString() ?: ""
+        }
+
+    val formattedDeviceType: String
+        get() = when (deviceType.trim().lowercase()) {
+            "mobile", "phone", "điện thoại" -> "Mobile"
+            "tablet" -> "Tablet"
+            "mac", "macbook", "mac book" -> "Macbook"
+            "laptop" -> "Laptop"
+            else -> if (deviceType.isBlank()) "Khác" else deviceType.trim().replaceFirstChar { it.uppercase() }
+        }
 
     val imageUrl: String
         get() = imageList.firstOrNull() ?: ""

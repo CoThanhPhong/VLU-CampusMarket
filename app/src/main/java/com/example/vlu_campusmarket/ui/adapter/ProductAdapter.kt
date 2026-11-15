@@ -59,16 +59,24 @@ class ProductAdapter(
 =======
     private val formatter = DecimalFormat("#,###")
 
+    companion object {
+        private const val PAYLOAD_USER_DATA = "PAYLOAD_USER_DATA"
+    }
+
     fun updateUserNames(names: Map<String, String>) {
         if (this.userNamesMap == names) return
         this.userNamesMap = names
-        notifyDataSetChanged()
+        if (itemCount > 0) {
+            notifyItemRangeChanged(0, itemCount, PAYLOAD_USER_DATA)
+        }
     }
 
     fun updateUserAvatars(avatars: Map<String, String>) {
         if (this.userAvatarsMap == avatars) return
         this.userAvatarsMap = avatars
-        notifyDataSetChanged()
+        if (itemCount > 0) {
+            notifyItemRangeChanged(0, itemCount, PAYLOAD_USER_DATA)
+        }
     }
 
     inner class ProductViewHolder(val binding: ProductItemBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -99,18 +107,18 @@ class ProductAdapter(
         fun bind(product: ProductModel) {
             binding.tvProductName.text = product.name
             binding.tvProductPrice.text = "${formatter.format(product.price)} \u20ab"
-            binding.tvDeviceType.text = product.deviceType
+            binding.tvDeviceType.text = product.formattedDeviceType
             binding.tvProductLocal.text = if (product.local.startsWith("Cơ sở")) product.local else "Cơ sở: ${product.local}"
             binding.tvProductAmount.text = "Kho: ${product.amount}"
 
-            // Load ảnh sản phẩm sử dụng Glide với override giới hạn kích thước tối ưu RAM
             binding.imgProduct.loadImageWithGlide(product.imageUrl, maxWidth = 350, maxHeight = 350)
+            bindUserData(product)
+        }
 
-            // Load avatar tác giả (ưu tiên từ product object, nếu không có lấy từ cache userAvatarsMap)
+        fun bindUserData(product: ProductModel) {
             val avatarUrl = product.authorAvatar ?: userAvatarsMap[product.authorId]
             binding.imgAuthorAvatar.loadImageWithGlide(avatarUrl, placeholderRes = R.drawable.ic_user_profile, maxWidth = 100, maxHeight = 100)
 
-            // Hiển thị tên người đăng từ cache hoặc từ product object
             val cachedName = userNamesMap[product.authorId]
             val authorDisplayName = product.authorName ?: cachedName
             if (!authorDisplayName.isNullOrEmpty() && authorDisplayName != "...") {
@@ -131,9 +139,23 @@ class ProductAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun onBindViewHolder(holder: ProductViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isNotEmpty() && payloads.contains(PAYLOAD_USER_DATA)) {
+            holder.bindUserData(getItem(position))
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     class ProductDiffCallback : DiffUtil.ItemCallback<ProductModel>() {
         override fun areItemsTheSame(oldItem: ProductModel, newItem: ProductModel): Boolean {
-            return oldItem._id == newItem._id
+            val oldId = oldItem.safeId
+            val newId = newItem.safeId
+            return if (oldId.isNotEmpty() && newId.isNotEmpty()) {
+                oldId == newId
+            } else {
+                oldItem == newItem
+            }
         }
 
         override fun areContentsTheSame(oldItem: ProductModel, newItem: ProductModel): Boolean {

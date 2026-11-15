@@ -92,8 +92,13 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     false to "Không thể kết nối đến server và không lưu được phiên offline"
 =======
             try {
-                // Xóa cookie cũ trước khi tiến hành login mới
+                // Xóa hoàn toàn cookie cũ và database Room cũ của tài khoản trước đó
                 RetrofitClient.clearCookies()
+                try {
+                    AppDatabase.getDatabase(getApplication()).clearAllTables()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 // Gọi API đăng nhập tới Backend
                 val response = apiService.login(LoginRequest(mssv, pass))
@@ -112,7 +117,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     val setCookieHeaders = response.headers().values("Set-Cookie")
                     val tokenCookieHeader = setCookieHeaders.firstOrNull { it.trim().startsWith("token=") }
                         ?: setCookieHeaders.firstOrNull()
-                    val cleanCookie = tokenCookieHeader?.substringBefore(";") ?: (if (rememberMe) "persistent_session" else "temporary_session")
+                    val cleanCookie = tokenCookieHeader?.substringBefore(";") ?: ""
 
                     val userEntity = UserEntity(
                         id = userData.id,

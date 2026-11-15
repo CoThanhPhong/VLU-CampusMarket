@@ -11,19 +11,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.appcompat.app.AppCompatActivity
 import com.example.vlu_campusmarket.R
 import com.example.vlu_campusmarket.data.local.AppDatabase
 import com.example.vlu_campusmarket.data.remote.RetrofitClient
 import com.example.vlu_campusmarket.databinding.FragmentAdminDashboardBinding
 import kotlinx.coroutines.launch
-import java.text.DecimalFormat
 
 class AdminDashboardFragment : Fragment() {
 
     private var _binding: FragmentAdminDashboardBinding? = null
     private val binding get() = _binding!!
-
-    private val formatter = DecimalFormat("#,###")
 
     private val viewModel: AdminViewModel by viewModels {
         object : ViewModelProvider.Factory {
@@ -49,17 +47,11 @@ class AdminDashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Admin Dashboard"
 
         binding.btnManageProducts.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentOutlet, AdminProductFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-
-        binding.btnManageOrders.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragmentOutlet, AdminOrderFragment())
                 .addToBackStack(null)
                 .commit()
         }
@@ -79,16 +71,8 @@ class AdminDashboardFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 launch {
-                    viewModel.allProducts.collect { products ->
-                        binding.tvAdminProductCount.text = products.size.toString()
-                    }
-                }
-
-                launch {
-                    viewModel.allOrders.collect { orders ->
-                        binding.tvAdminOrderCount.text = orders.size.toString()
-                        val revenue = orders.sumOf { it.totalPrice }
-                        binding.tvAdminRevenue.text = "${formatter.format(revenue)} \u20ab"
+                    viewModel.totalProductsCount.collect { count ->
+                        binding.tvAdminProductCount.text = count.toString()
                     }
                 }
 

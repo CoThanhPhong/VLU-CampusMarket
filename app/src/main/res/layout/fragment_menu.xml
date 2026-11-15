@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC"
+    android:background="@color/app_background"
     android:padding="20dp">
 
     <!-- Danh sách menu chính ở trên -->
@@ -15,15 +15,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Danh Mục Chức Năng"
-            android:textColor="#1E293B"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="20dp" />
 
         <!-- Button Quản Trị Admin System -->
         <com.google.android.material.card.MaterialCardView
@@ -47,14 +38,14 @@
                 <ImageView
                     android:layout_width="28dp"
                     android:layout_height="28dp"
-                    android:src="@drawable/ic_menu"
+                    android:src="@drawable/ic_admin"
                     app:tint="#DC2626" />
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Bảng Quản Trị Admin System"
+                    android:text="ADMIN Dashboard"
                     android:textColor="#991B1B"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -154,6 +145,48 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Chế độ tối (Dark Mode) Toggle Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/btnMenuDarkMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E2E8F0">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_menu"
+                    app:tint="#4F46E5" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Chế độ tối (Dark Mode)"
+                    android:textColor="#1E293B"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="16dp" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchDarkMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
 
     <!-- Nút Đăng Xuất độc lập ở đáy màn hình (Bottom Standalone Style) -->
@@ -171,6 +204,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="110dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vlu_campusmarket.data.models.ProductModel
 import com.example.vlu_campusmarket.data.repository.ProductRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -13,14 +15,8 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private val _selectedCategory = MutableStateFlow("ALL")
     private val _searchQuery = MutableStateFlow("".trim())
 
-<<<<<<< HEAD
-    // Cache userId -> tên người dùng, và các userId đang được gọi API (tránh gọi trùng)
-    private val userCache = mutableMapOf<String, String>()
-    private val inFlightUsers = mutableSetOf<String>()
-=======
     private val userCache = mutableMapOf<String, String>()
     private val avatarCache = mutableMapOf<String, String>()
->>>>>>> features/optimize-leakCanary
 
     private val _userNames = MutableStateFlow(mapOf<String, String>())
     val userNames: StateFlow<Map<String, String>> = _userNames.asStateFlow()
@@ -31,17 +27,9 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-<<<<<<< HEAD
-    // Thông báo lỗi một lần (hiển thị Toast)
-    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val messages: SharedFlow<String> = _messages.asSharedFlow()
-
-    private var initialSyncRequested = false
-=======
     private var currentPage = 1
     private var totalPages = 1
     private var isLoadingMore = false
->>>>>>> features/optimize-leakCanary
 
     val filteredProducts: StateFlow<List<ProductModel>> = combine(
         _allProducts,
@@ -49,59 +37,70 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         _searchQuery
     ) { products, category, query ->
         products.filter { product ->
-            val matchCategory = category == "ALL" || product.deviceType.equals(category, ignoreCase = true)
+            val matchCategory = if (category == "ALL") true else {
+                if (category.equals("Macbook", ignoreCase = true) || category.equals("Mac", ignoreCase = true)) {
+                    product.deviceType.contains("mac", ignoreCase = true)
+                } else {
+                    product.deviceType.equals(category, ignoreCase = true)
+                }
+            }
             val matchQuery = product.name.contains(query, ignoreCase = true)
-            matchCategory && matchQuery
-        }
+            val statusLower = product.status?.trim()?.lowercase() ?: "chờ duyệt"
+            val isApproved = statusLower in listOf("còn hàng", "available", "approved", "đã duyệt")
+            val isAvailable = product.amount > 0 && isApproved
+            matchCategory && matchQuery && isAvailable
+        }.sortedByDescending { it.safeId }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         observeLocalDatabase()
         refreshData()
+        startRealtimeProductSync()
     }
 
     private fun observeLocalDatabase() {
         viewModelScope.launch {
             repository.localProducts.collect { list ->
                 _allProducts.value = list
-<<<<<<< HEAD
-                // Chỉ tự đồng bộ 1 lần khi DB rỗng (tránh lặp vô hạn khi server lỗi)
-                if (list.isEmpty() && !initialSyncRequested) {
-                    initialSyncRequested = true
-                    refreshData()
+            }
+        }
+    }
+
+    private fun startRealtimeProductSync() {
+        viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                delay(10000) // Tự động đồng bộ sản phẩm mới từ server MongoDB mỗi 10s
+                try {
+                    val res = repository.fetchFromRemoteAndSave(page = 1)
+                    if (res != null && res.totalPages > 1) {
+                        for (p in 2..minOf(res.totalPages, 10)) {
+                            repository.fetchFromRemoteAndSave(page = p)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignored
                 }
-=======
->>>>>>> features/optimize-leakCanary
             }
         }
     }
 
     fun refreshData() {
-        if (_isRefreshing.value) return
         viewModelScope.launch {
             _isRefreshing.value = true
-<<<<<<< HEAD
-            try {
-                repository.fetchFromRemoteAndSave()?.let { _messages.tryEmit(it) }
-            } finally {
-                _isRefreshing.value = false
-            }
-        }
-    }
-
-    fun fetchUserNameIfNeeded(userId: String) {
-        if (userId.isBlank() || userCache.containsKey(userId) || !inFlightUsers.add(userId)) return
-
-        viewModelScope.launch {
-            val user = repository.getUserDetail(userId)
-            userCache[userId] = user?.profile?.name?.takeIf { it.isNotBlank() } ?: "Người dùng"
-            inFlightUsers.remove(userId)
-=======
             currentPage = 1
             val result = repository.fetchFromRemoteAndSave(page = 1)
             if (result != null) {
                 currentPage = result.currentPage
                 totalPages = result.totalPages
+                var p = 2
+                while (p <= totalPages && p <= 20) {
+                    val pageRes = repository.fetchFromRemoteAndSave(page = p)
+                    if (pageRes == null || pageRes.data.isEmpty()) {
+                        break
+                    }
+                    totalPages = maxOf(totalPages, pageRes.totalPages)
+                    p++
+                }
             }
             _isRefreshing.value = false
         }
@@ -139,7 +138,6 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
                 userCache[userId] = "Sinh viên VLU"
                 avatarCache[userId] = ""
             }
->>>>>>> features/optimize-leakCanary
             _userNames.value = userCache.toMap()
             _userAvatars.value = avatarCache.toMap()
         }

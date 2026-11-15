@@ -2,14 +2,17 @@ package com.example.vlu_campusmarket.data.repository
 
 import com.example.vlu_campusmarket.data.local.Converters
 import com.example.vlu_campusmarket.data.local.dao.OrderDao
+import com.example.vlu_campusmarket.data.local.dao.ProductDao
 import com.example.vlu_campusmarket.data.local.dao.UserDao
 import com.example.vlu_campusmarket.data.local.entity.OrderEntity
 import com.example.vlu_campusmarket.data.models.OrderItemModel
 import com.example.vlu_campusmarket.data.models.OrderModel
 import com.example.vlu_campusmarket.data.models.ShippingInfoModel
+import com.example.vlu_campusmarket.data.models.UserModel
 import com.example.vlu_campusmarket.data.remote.ApiService
 import com.example.vlu_campusmarket.data.remote.response.CancelOrderRequest
 import com.example.vlu_campusmarket.data.remote.response.CreateOrderRequest
+import com.example.vlu_campusmarket.data.remote.response.UserIdRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -17,7 +20,8 @@ import kotlinx.coroutines.flow.map
 class OrderRepository(
     private val orderDao: OrderDao,
     private val apiService: ApiService,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val productDao: ProductDao? = null
 ) {
 
     suspend fun getLoggedInUserId(): String? {
@@ -30,13 +34,19 @@ class OrderRepository(
                 OrderModel(
                     _id = entity.id,
                     user = entity.userId,
-                    orderItems = entity.orderItems.map { 
+                    orderItems = entity.orderItems.map { it ->
+                        val localProd = productDao?.getProductById(it.product)
+                        val authorIdToUse = localProd?.author ?: ""
+
                         OrderItemModel(
                             product = mapOf(
                                 "_id" to it.product,
-                                "name" to (it.productName ?: ""),
-                                "img" to (it.productImg ?: ""),
-                                "author" to mapOf("profile" to mapOf("name" to (it.authorName ?: "")))
+                                "name" to (it.productName ?: localProd?.name ?: ""),
+                                "img" to (it.productImg ?: localProd?.img ?: ""),
+                                "author" to mapOf(
+                                    "_id" to authorIdToUse,
+                                    "profile" to mapOf("name" to (it.authorName ?: ""))
+                                )
                             ),
                             quantity = it.quantity,
                             price = it.price,
@@ -64,15 +74,16 @@ class OrderRepository(
                     val entity = OrderEntity(
                         id = model._id,
                         userId = userId,
-                        orderItems = model.orderItems.map { 
+                        orderItems = model.orderItems.map { item ->
+                            val localProd = productDao?.getProductById(item.productId)
                             Converters.EmbeddedOrderItem(
-                                product = it.productId,
-                                quantity = it.quantity,
-                                price = it.price,
-                                local = it.local,
-                                productName = it.productName,
-                                productImg = it.productImg,
-                                authorName = it.authorName
+                                product = item.productId,
+                                quantity = item.quantity,
+                                price = item.price,
+                                local = item.local,
+                                productName = item.productName ?: localProd?.name,
+                                productImg = item.productImg ?: localProd?.img,
+                                authorName = item.authorName
                             ) 
                         },
                         shippingInfo = Converters.EmbeddedShippingInfo(model.shippingInfo.fullName, model.shippingInfo.phone,model.shippingInfo.local),
@@ -155,6 +166,29 @@ class OrderRepository(
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+
+    suspend fun getUserDetail(userId: String): UserModel? {
+        return try {
+            val requestBody = UserIdRequest(userId)
+            val response = apiService.getUserById(requestBody)
+            if (response.isSuccessful) {
+                val userResponse = response.body()?.data
+                if (userResponse != null) {
+                    UserModel(
+                        id = userResponse.id,
+                        mssv = userResponse.mssv,
+                        email = userResponse.email,
+                        role = userResponse.role,
+                        profile = userResponse.profile
+                    )
+                } else null
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 }

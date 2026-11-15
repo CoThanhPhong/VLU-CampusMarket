@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -104,18 +105,27 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Trang cá nhân"
 
         setupRecyclerView()
 
         val targetUserId = arguments?.getString(ARG_USER_ID)
-        if (targetUserId.isNullOrEmpty()) {
+        val sessionUser = sessionManager.fetchUser()
+        val isSelf = targetUserId.isNullOrEmpty() ||
+                (sessionUser != null && (
+                    targetUserId.equals(sessionUser.id, ignoreCase = true) ||
+                    (sessionUser.email.isNotEmpty() && targetUserId.equals(sessionUser.email, ignoreCase = true)) ||
+                    (sessionUser.mssv.isNotEmpty() && targetUserId.equals(sessionUser.mssv, ignoreCase = true))
+                ))
+
+        if (isSelf) {
             loadUserDataFromSession()
-            binding.btnEditProfile.visibility = View.VISIBLE
-            binding.btnEditProfile.setOnClickListener {
+            binding.btnEditAvatarBadge.visibility = View.VISIBLE
+            binding.btnEditAvatarBadge.setOnClickListener {
                 showEditProfileDialog()
             }
         } else {
-            binding.btnEditProfile.visibility = View.GONE
+            binding.btnEditAvatarBadge.visibility = View.GONE
         }
 
         observeViewModel()
@@ -123,6 +133,7 @@ class ProfileFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        (activity as? AppCompatActivity)?.supportActionBar?.title = "Hồ sơ cá nhân"
         viewModel.refreshProfileData()
     }
 
@@ -131,6 +142,7 @@ class ProfileFragment : Fragment() {
         val etName = dialogView.findViewById<EditText>(R.id.etEditName)
         val etPhone = dialogView.findViewById<EditText>(R.id.etEditPhone)
         val etBio = dialogView.findViewById<EditText>(R.id.etEditBio)
+        val etAvatarUrl = dialogView.findViewById<EditText>(R.id.etEditAvatarUrl)
         val ivAvatar = dialogView.findViewById<ImageView>(R.id.ivEditAvatar)
 
         editAvatarImageView = ivAvatar
@@ -141,24 +153,33 @@ class ProfileFragment : Fragment() {
         etName.setText(currentProfile?.name ?: "")
         etPhone.setText(currentProfile?.phone ?: "")
         etBio.setText(currentProfile?.bio ?: "")
-        ivAvatar.loadImageWithGlide(currentProfile?.avatar, placeholderRes = R.drawable.ic_user_profile, maxWidth = 200, maxHeight = 200)
+        etAvatarUrl.setText(currentProfile?.avatar ?: "")
+        ivAvatar.loadImageWithGlide(RetrofitClient.getFullImageUrl(currentProfile?.avatar), placeholderRes = R.drawable.ic_user_profile, maxWidth = 200, maxHeight = 200)
 
         ivAvatar.setOnClickListener {
             pickAvatarLauncher.launch("image/*")
         }
 
         AlertDialog.Builder(requireContext())
-            .setTitle("Chỉnh sửa hồ sơ cá nhân")
+            .setTitle("Chỉnh sửa trang cá nhân")
             .setView(dialogView)
             .setPositiveButton("Lưu") { _, _ ->
                 val name = etName.text.toString().trim()
                 val phone = etPhone.text.toString().trim()
                 val bio = etBio.text.toString().trim()
+                val avatarUrlInput = etAvatarUrl.text.toString().trim()
 
-                viewModel.updateProfile(name, phone, bio, editAvatarBase64) { success, msg ->
+                val finalAvatar = when {
+                    avatarUrlInput.isNotEmpty() -> avatarUrlInput
+                    editAvatarBase64 != null -> editAvatarBase64
+                    else -> currentProfile?.avatar ?: ""
+                }
+
+                viewModel.updateProfile(name, phone, bio, finalAvatar) { success, msg ->
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                     if (success) {
                         loadUserDataFromSession()
+                        viewModel.refreshProfileData()
                     }
                 }
             }

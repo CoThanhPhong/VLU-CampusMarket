@@ -117,9 +117,10 @@ class ProductRepository(
             if (response.isSuccessful) {
                 val body = response.body()
                 val productList = body?.data ?: emptyList()
-                val entities = productList.map { model ->
+                val entities = productList.mapIndexed { index, model ->
+                    val finalId = if (model.safeId.isNotEmpty()) model.safeId else "prod_p${page}_${index}_${System.identityHashCode(model)}"
                     ProductEntity(
-                        _id = model.safeId,
+                        _id = finalId,
                         name = model.name,
                         price = model.price,
                         deviceType = model.deviceType,
@@ -130,7 +131,7 @@ class ProductRepository(
                         local = model.local,
                         status = model.status
                     )
-                }.filter { it._id.isNotEmpty() }
+                }.distinctBy { it._id }
                 productDao.insertProducts(entities)
                 body
             } else {

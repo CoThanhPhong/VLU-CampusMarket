@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -9,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Thông tin nhận hàng"
-        android:textColor="#1E293B"
+        android:textColor="@color/text_primary"
         android:textSize="16sp"
         android:textStyle="bold"
         android:layout_marginBottom="12dp" />
@@ -22,6 +23,7 @@
             android:id="@+id/etFullName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
             android:inputType="textPersonName" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -34,20 +36,22 @@
             android:id="@+id/etPhone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
             android:inputType="phone" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="Cơ sở VLU (Ví dụ: Cơ sở 1, Cơ sở 3)">
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etCampus"
+        android:hint="Cơ sở VLU">
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/actCampus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cơ sở 3"
-            android:inputType="text" />
+            android:inputType="none"
+            android:textColor="@color/text_primary" />
     </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>
