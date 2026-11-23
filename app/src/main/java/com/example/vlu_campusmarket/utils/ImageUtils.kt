@@ -26,9 +26,11 @@ fun ImageView.loadImageWithGlide(
         return
     }
 
-    if (imagePath.startsWith("data:image")) {
+    val cleanPath = imagePath.trim().removeSurrounding("[", "]").removeSurrounding("\"", "\"").removeSurrounding("'", "'").trim()
+
+    if (cleanPath.startsWith("data:image")) {
         try {
-            val base64Data = imagePath.substringAfter(",")
+            val base64Data = cleanPath.substringAfter(",")
             val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
             Glide.with(this)
                 .load(imageBytes)
@@ -48,7 +50,7 @@ fun ImageView.loadImageWithGlide(
         }
     }
 
-    val fullUrl = RetrofitClient.getFullImageUrl(imagePath)
+    val fullUrl = RetrofitClient.getFullImageUrl(cleanPath)
 
     Glide.with(this)
         .load(fullUrl)

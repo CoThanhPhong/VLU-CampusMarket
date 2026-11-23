@@ -3,6 +3,7 @@ package com.example.vlu_campusmarket.ui.admin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vlu_campusmarket.data.local.dao.ProductDao
+import com.example.vlu_campusmarket.data.local.dao.UserDao
 import com.example.vlu_campusmarket.data.local.entity.ProductEntity
 import com.example.vlu_campusmarket.data.models.OrderModel
 import com.example.vlu_campusmarket.data.models.ProductModel
@@ -12,6 +13,7 @@ import com.example.vlu_campusmarket.data.remote.response.OrderCreateResponse
 import com.example.vlu_campusmarket.data.remote.response.ProductIdRequest
 import com.example.vlu_campusmarket.data.remote.response.UpdateOrderStatusRequest
 import com.example.vlu_campusmarket.data.remote.response.UserIdRequest
+import com.example.vlu_campusmarket.utils.SessionManager
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +33,9 @@ import retrofit2.Response
 
 class AdminViewModel(
     private val apiService: ApiService,
-    private val productDao: ProductDao
+    private val productDao: ProductDao,
+    private val userDao: UserDao? = null,
+    private val sessionManager: SessionManager? = null
 ) : ViewModel() {
 
     private val _allProducts = MutableStateFlow<List<ProductModel>>(emptyList())
@@ -107,17 +112,62 @@ class AdminViewModel(
         startRealtimeOrderSync()
     }
 
+    private suspend fun filterOrdersForCurrentRole(orders: List<OrderModel>): List<OrderModel> {
+        val sessionUser = sessionManager?.fetchUser()
+        val entityUser = userDao?.getLoggedInUser()?.firstOrNull()
+
+        val currentUserId = (sessionUser?.id ?: entityUser?.id ?: "").trim()
+        val currentMssv = (sessionUser?.mssv ?: entityUser?.mssv ?: "").trim()
+        val currentEmail = (sessionUser?.email ?: entityUser?.email ?: "").trim()
+
+        if (currentUserId.isEmpty() && currentMssv.isEmpty() && currentEmail.isEmpty()) {
+            return orders
+        }
+
+        val filteredList = mutableListOf<OrderModel>()
+        for (order in orders) {
+            val matchingItems = order.orderItems.filter { item ->
+                val productId = item.productId
+                val localProd = productDao.getProductById(productId)
+                val authorId = (localProd?.author ?: item.authorId).trim()
+
+                authorId.isNotEmpty() && (
+                    authorId.equals(currentUserId, ignoreCase = true) ||
+                    authorId.equals(currentMssv, ignoreCase = true) ||
+                    authorId.equals(currentEmail, ignoreCase = true)
+                )
+            }
+            if (matchingItems.isNotEmpty()) {
+                val sellerOrder = order.copy(
+                    orderItems = matchingItems,
+                    totalPrice = matchingItems.sumOf { it.price * it.quantity }
+                )
+                filteredList.add(sellerOrder)
+            }
+        }
+        return filteredList
+    }
+
     private fun observeLocalDatabase() {
         viewModelScope.launch {
             productDao.getAllProducts().collect { entities ->
                 val models = entities.map { entity ->
+                    val parsedImg: Any = if (entity.img.startsWith("[")) {
+                        try {
+                            Gson().fromJson(entity.img, Array<String>::class.java).toList()
+                        } catch (_: Exception) {
+                            entity.img
+                        }
+                    } else {
+                        entity.img
+                    }
                     ProductModel(
                         _id = entity._id,
                         name = entity.name,
                         price = entity.price,
                         deviceType = entity.deviceType,
                         author = entity.author,
-                        img = entity.img,
+                        img = parsedImg,
                         description = entity.description,
                         amount = entity.amount,
                         local = entity.local,
@@ -138,21 +188,22 @@ class AdminViewModel(
                 try {
                     val orderResponse = apiService.getAllOrders()
                     if (orderResponse.isSuccessful && orderResponse.body()?.success == true) {
-                        val newOrders = (orderResponse.body()?.data ?: emptyList()).sortedByDescending { it._id }
-                        _allOrders.value = newOrders
+                        val rawOrders = orderResponse.body()?.data ?: emptyList()
+                        val filteredOrders = filterOrdersForCurrentRole(rawOrders).sortedByDescending { it._id }
+                        _allOrders.value = filteredOrders
 
-                        val currentPendingIds = newOrders
+                        val currentPendingIds = filteredOrders
                             .filter { it.orderStatus.equals("Chờ xác nhận", ignoreCase = true) || it.orderStatus.equals("pending", ignoreCase = true) }
                             .map { it._id }
                             .toSet()
 
                         val brandNewPending = currentPendingIds - previousPendingOrderIds
                         if (brandNewPending.isNotEmpty() && previousPendingOrderIds.isNotEmpty()) {
-                            _notificationEvent.emit("🔔 Thông báo: Có ${brandNewPending.size} đơn hàng mới vừa được người mua thanh toán!")
+                            _notificationEvent.emit("🔔 Thông báo: Có ${brandNewPending.size} đơn hàng mới vừa được đặt/thanh toán!")
                         }
                         previousPendingOrderIds = currentPendingIds
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Bỏ qua lỗi kết nối tạm thời khi sync ngầm
                 }
             }
@@ -208,12 +259,13 @@ class AdminViewModel(
                     productDao.insertProducts(entities)
                 }
 
-                // Fetch Orders
+                // Fetch Orders & Filter by Role
                 val orderResponse = apiService.getAllOrders()
                 if (orderResponse.isSuccessful && orderResponse.body()?.success == true) {
-                    val ordersList = (orderResponse.body()?.data ?: emptyList()).sortedByDescending { it._id }
-                    _allOrders.value = ordersList
-                    previousPendingOrderIds = ordersList
+                    val rawOrders = orderResponse.body()?.data ?: emptyList()
+                    val filteredOrders = filterOrdersForCurrentRole(rawOrders).sortedByDescending { it._id }
+                    _allOrders.value = filteredOrders
+                    previousPendingOrderIds = filteredOrders
                         .filter { it.orderStatus.equals("Chờ xác nhận", ignoreCase = true) || it.orderStatus.equals("pending", ignoreCase = true) }
                         .map { it._id }
                         .toSet()
@@ -257,16 +309,11 @@ class AdminViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             var successCount = 0
-            val currentProducts = _allProducts.value.associateBy { it._id }
 
             productIds.forEach { id ->
-                val currentModel = currentProducts[id]
-                if (currentModel != null) {
-                    val updatedModel = currentModel.copy(status = newStatus)
-                    val response = apiService.updateProduct(updatedModel)
-                    if (response.isSuccessful) {
-                        successCount++
-                    }
+                val response = apiService.updateProduct(ProductModel(_id = id, status = newStatus))
+                if (response.isSuccessful) {
+                    successCount++
                 }
             }
             refreshAllData()
@@ -300,6 +347,9 @@ class AdminViewModel(
                 val req = UpdateOrderStatusRequest(orderId, newStatus)
                 val response: Response<OrderCreateResponse> = when {
                     newStatus.equals("Đã xác nhận", ignoreCase = true) || newStatus.equals("approved", ignoreCase = true) -> {
+                        apiService.confirmOrder(req)
+                    }
+                    newStatus.equals("Đã đến địa điểm giao hàng", ignoreCase = true) || newStatus.equals("seller_arrived", ignoreCase = true) -> {
                         apiService.confirmOrder(req)
                     }
                     newStatus.equals("Đã hủy", ignoreCase = true) || newStatus.equals("Đã từ chối", ignoreCase = true) || newStatus.equals("cancelled", ignoreCase = true) || newStatus.equals("rejected", ignoreCase = true) -> {
@@ -393,7 +443,10 @@ class AdminViewModel(
     fun updateProductDetails(product: ProductModel, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
-                val response = apiService.updateProduct(product)
+                val updatedProduct = product.copy(
+                    img = if (product.imageList.isNotEmpty()) product.imageList else product.imageUrl
+                )
+                val response = apiService.updateProduct(updatedProduct)
                 if (response.isSuccessful) {
                     refreshAllData()
                     onResult(true, "Cập nhật sản phẩm thành công")

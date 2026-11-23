@@ -78,6 +78,76 @@
             android:orientation="vertical"
             android:layout_marginTop="6dp" />
 
+        <!-- Khu vực hiển thị thông tin Liên hệ Người mua (Dành cho Seller) -->
+        <LinearLayout
+            android:id="@+id/layoutContactSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/app_background"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvContactTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="LIÊN HỆ NGƯỜI MUA"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvContactName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tên: Nguyễn Văn B"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/tvContactPhoneEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="SĐT: 0901234567"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCallContact"
+                    android:layout_width="0dp"
+                    android:layout_height="32dp"
+                    android:layout_weight="1"
+                    android:text="Gọi điện"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    app:backgroundTint="#16A34A"
+                    app:cornerRadius="6dp"
+                    android:layout_marginEnd="4dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEmailContact"
+                    android:layout_width="0dp"
+                    android:layout_height="32dp"
+                    android:layout_weight="1"
+                    android:text="Gửi Email"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    app:backgroundTint="#2563EB"
+                    app:cornerRadius="6dp"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -101,6 +171,19 @@
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSellerArrived"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:text="ĐÃ ĐẾN NƠI"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                app:backgroundTint="#2563EB"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConfirmOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
@@ -110,7 +193,7 @@
                 android:textStyle="bold"
                 app:backgroundTint="#16A34A"
                 app:cornerRadius="8dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="4dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCancelOrder"

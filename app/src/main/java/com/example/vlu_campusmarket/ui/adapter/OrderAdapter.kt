@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vlu_campusmarket.data.models.OrderModel
 import com.example.vlu_campusmarket.data.models.ProductModel
+import com.example.vlu_campusmarket.data.models.UserModel
 import com.example.vlu_campusmarket.databinding.OrderItemBinding
 import com.example.vlu_campusmarket.databinding.OrderSubItemBinding
 import com.example.vlu_campusmarket.utils.loadImageWithGlide
@@ -16,6 +17,7 @@ import java.text.DecimalFormat
 
 class OrderAdapter(
     private var userNamesMap: Map<String, String> = emptyMap(),
+    private var sellerDetailsMap: Map<String, UserModel> = emptyMap(),
     private val onRequestFetchUser: (String) -> Unit,
     private val onCancelOrder: (String) -> Unit,
     private val onProductClick: (ProductModel) -> Unit
@@ -26,6 +28,12 @@ class OrderAdapter(
     fun updateUserNames(names: Map<String, String>) {
         if (this.userNamesMap == names) return
         this.userNamesMap = names
+        notifyDataSetChanged()
+    }
+
+    fun updateSellerDetails(sellers: Map<String, UserModel>) {
+        if (this.sellerDetailsMap == sellers) return
+        this.sellerDetailsMap = sellers
         notifyDataSetChanged()
     }
 
@@ -42,6 +50,8 @@ class OrderAdapter(
         fun bind(order: OrderModel) {
             binding.layoutOrderItemsContainer.removeAllViews()
             binding.btnConfirmOrder.visibility = View.GONE
+            binding.btnSellerArrived.visibility = View.GONE
+            binding.layoutContactSection.visibility = View.GONE // Chỉ người bán liên hệ người mua
             binding.tvOrderId.text = "Mã đơn: #${order._id.take(8)}"
 
             val hasItems = order.orderItems.isNotEmpty()
@@ -64,6 +74,7 @@ class OrderAdapter(
             }
 
             val statusLower = order.orderStatus.lowercase()
+            val isArrived = statusLower.contains("đến") || statusLower.contains("arrived") || statusLower == "seller_arrived"
             val isOrderConfirmed = statusLower in listOf("đã xác nhận", "approved", "completed", "hoàn thành") || allItemsConfirmed
             val isOrderCancelled = statusLower in listOf("đã hủy", "cancelled", "đã từ chối", "từ chối") || allItemsRejected
 
@@ -72,6 +83,12 @@ class OrderAdapter(
                     binding.tvOrderStatus.text = "Đã hủy"
                     binding.tvOrderStatus.setTextColor(Color.parseColor("#DC2626"))
                     binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#FEE2E2"))
+                    binding.btnCancelOrder.visibility = View.GONE
+                }
+                isArrived -> {
+                    binding.tvOrderStatus.text = "Đã đến địa điểm giao hàng"
+                    binding.tvOrderStatus.setTextColor(Color.parseColor("#2563EB"))
+                    binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#DBEAFE"))
                     binding.btnCancelOrder.visibility = View.GONE
                 }
                 isOrderConfirmed -> {
@@ -99,7 +116,12 @@ class OrderAdapter(
             binding.tvOrderItemsCount.text = "Tổng số lượng sản phẩm: $totalQty"
             binding.tvOrderTotal.text = "Tổng tiền: ${formatter.format(order.totalPrice)} \u20ab"
 
-            // Hiển thị chi tiết từng sản phẩm và tên người đăng trong đơn hàng
+            // Nếu người bán đã đến nơi, hiển thị thông báo nổi bật cho Buyer
+            if (isArrived) {
+                binding.tvShippingDetails.text = "${binding.tvShippingDetails.text}\n\n📍 THÔNG BÁO: Người bán đã có mặt tại địa điểm giao hàng! Vui lòng liên hệ trực tiếp để nhận sản phẩm."
+            }
+
+            // Hiển thị chi tiết từng sản phẩm
             val inflater = LayoutInflater.from(binding.root.context)
             order.orderItems.forEach { item ->
                 val subBinding = OrderSubItemBinding.inflate(inflater, binding.layoutOrderItemsContainer, false)
@@ -113,10 +135,10 @@ class OrderAdapter(
                 }
 
                 val authorText = if (!authorDisplayName.isNullOrEmpty() && authorDisplayName != "...") {
-                    "Người đăng: $authorDisplayName"
+                    "Người bán: $authorDisplayName"
                 } else if (item.authorId.isNotEmpty()) {
                     onRequestFetchUser(item.authorId)
-                    "Người đăng: Đang tải..."
+                    "Người bán: Đang tải..."
                 } else {
                     ""
                 }
@@ -124,13 +146,40 @@ class OrderAdapter(
                 subBinding.tvSubProductName.text = productName
                 subBinding.tvSubProductDetails.text = "SL: ${item.quantity} | ${formatter.format(item.price)} đ | ${item.local}"
                 
-                if (authorText.isNotEmpty()) {
-                    subBinding.tvSubProductStatus.visibility = View.VISIBLE
-                    subBinding.tvSubProductStatus.text = authorText
-                    subBinding.tvSubProductStatus.setTextColor(Color.parseColor("#94A3B8"))
-                } else {
-                    subBinding.tvSubProductStatus.visibility = View.GONE
+                val itemStatus = item.currentStatus
+                val resolvedItemStatus = when {
+                    itemStatus.isNotEmpty() -> itemStatus
+                    isOrderConfirmed -> "Đã xác nhận"
+                    isOrderCancelled -> "Đã từ chối"
+                    else -> "Chờ xác nhận"
                 }
+
+                val statusDisplay = "Trạng thái: $resolvedItemStatus"
+                val combinedText = if (authorText.isNotEmpty()) {
+                    "$authorText • $statusDisplay"
+                } else {
+                    statusDisplay
+                }
+
+                subBinding.tvSubProductStatus.visibility = View.VISIBLE
+                subBinding.tvSubProductStatus.text = combinedText
+
+                val isItemConfirmed = resolvedItemStatus.equals("Đã xác nhận", ignoreCase = true) ||
+                                      resolvedItemStatus.equals("approved", ignoreCase = true) ||
+                                      resolvedItemStatus.equals("Hoàn thành", ignoreCase = true) ||
+                                      resolvedItemStatus.equals("completed", ignoreCase = true)
+                val isItemRejected = resolvedItemStatus.equals("Từ chối", ignoreCase = true) ||
+                                     resolvedItemStatus.equals("Đã từ chối", ignoreCase = true) ||
+                                     resolvedItemStatus.equals("rejected", ignoreCase = true) ||
+                                     resolvedItemStatus.equals("Đã hủy", ignoreCase = true) ||
+                                     resolvedItemStatus.equals("cancelled", ignoreCase = true)
+
+                val statusColor = when {
+                    isItemConfirmed -> "#16A34A"
+                    isItemRejected -> "#DC2626"
+                    else -> "#D97706"
+                }
+                subBinding.tvSubProductStatus.setTextColor(Color.parseColor(statusColor))
 
                 subBinding.imgSubProduct.loadImageWithGlide(item.productImg, maxWidth = 150, maxHeight = 150)
                 subBinding.ivSubItemMenu.visibility = View.GONE
@@ -141,7 +190,8 @@ class OrderAdapter(
                         price = item.price,
                         local = item.local,
                         img = item.productImg ?: "",
-                        amount = item.quantity
+                        amount = item.quantity,
+                        author = item.authorId
                     )
                     onProductClick(productModel)
                 }

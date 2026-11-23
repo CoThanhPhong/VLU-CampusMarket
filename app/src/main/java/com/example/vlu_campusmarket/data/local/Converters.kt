@@ -15,9 +15,15 @@ class Converters {
         val local: String,
         val productName: String? = null,
         val productImg: String? = null,
-        val authorName: String? = null
+        val authorName: String? = null,
+        val status: String? = null
     )
-    data class EmbeddedShippingInfo(val fullName: String, val phone: String, val local: String)
+    data class EmbeddedShippingInfo(
+        val fullName: String,
+        val phone: String,
+        val local: String,
+        val email: String? = null
+    )
 
     @TypeConverter
     fun fromCartItems(value: List<EmbeddedCartItem>?): String = gson.toJson(value)

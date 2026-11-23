@@ -10,15 +10,19 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.vlu_campusmarket.data.models.OrderItemModel
 import com.example.vlu_campusmarket.data.models.OrderModel
+import com.example.vlu_campusmarket.data.models.ProductModel
 import com.example.vlu_campusmarket.databinding.OrderItemBinding
 import com.example.vlu_campusmarket.databinding.OrderSubItemBinding
+import com.example.vlu_campusmarket.utils.ContactHelper
 import com.example.vlu_campusmarket.utils.loadImageWithGlide
 import java.text.DecimalFormat
 
 class AdminOrderAdapter(
     private val onConfirmOrder: (String) -> Unit,
     private val onCancelOrder: (String) -> Unit,
-    private val onSubItemAction: (OrderModel, OrderItemModel, String) -> Unit
+    private val onSellerArrived: (String) -> Unit,
+    private val onSubItemAction: (OrderModel, OrderItemModel, String) -> Unit,
+    private val onProductClick: ((ProductModel) -> Unit)? = null
 ) : ListAdapter<OrderModel, AdminOrderAdapter.AdminOrderViewHolder>(OrderDiffCallback()) {
 
     private val formatter = DecimalFormat("#,###")
@@ -47,6 +51,14 @@ class AdminOrderAdapter(
                 }
             }
 
+            binding.btnSellerArrived.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    val order = getItem(pos)
+                    onSellerArrived(order._id)
+                }
+            }
+
             binding.btnCancelOrder.setOnClickListener {
                 val pos = bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION) {
@@ -71,15 +83,20 @@ class AdminOrderAdapter(
         fun bind(order: OrderModel) {
             binding.tvOrderId.text = "Đơn hệ thống: #${order._id.take(8)}"
 
-            val isOrderConfirmedDirect = order.orderStatus.equals("Đã xác nhận", ignoreCase = true) ||
-                                         order.orderStatus.equals("approved", ignoreCase = true) ||
-                                         order.orderStatus.equals("Hoàn thành", ignoreCase = true) ||
-                                         order.orderStatus.equals("completed", ignoreCase = true)
+            val statusLower = order.orderStatus.lowercase()
+            val isArrived = statusLower.contains("đến") || statusLower.contains("arrived") || statusLower == "seller_arrived"
 
-            val isOrderCancelledDirect = order.orderStatus.equals("Đã hủy", ignoreCase = true) ||
-                                         order.orderStatus.equals("cancelled", ignoreCase = true) ||
-                                         order.orderStatus.equals("Đã từ chối", ignoreCase = true) ||
-                                         order.orderStatus.equals("rejected", ignoreCase = true)
+            val isOrderConfirmedDirect = statusLower == "đã xác nhận" ||
+                                         statusLower == "approved" ||
+                                         statusLower == "completed" ||
+                                         statusLower == "hoàn thành" ||
+                                         isArrived
+
+            val isOrderCancelledDirect = statusLower == "đã hủy" ||
+                                         statusLower == "cancelled" ||
+                                         statusLower == "đã từ chối" ||
+                                         statusLower == "từ chối" ||
+                                         statusLower == "rejected"
 
             val itemStatusList = order.orderItems.map { item ->
                 val itemKey = "${order._id}_${item.productId}"
@@ -118,7 +135,7 @@ class AdminOrderAdapter(
             val isOrderConfirmed = isOrderConfirmedDirect || allItemsConfirmed
             val isOrderCancelled = isOrderCancelledDirect || allItemsRejected
 
-            val isFinalState = isOrderConfirmed || isOrderCancelled || allItemsProcessed
+            val isFinalState = isOrderCancelled || allItemsProcessed
 
             when {
                 isOrderCancelled -> {
@@ -126,15 +143,15 @@ class AdminOrderAdapter(
                     binding.tvOrderStatus.setTextColor(Color.WHITE)
                     binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#EF4444"))
                 }
+                isArrived -> {
+                    binding.tvOrderStatus.text = "Đã đến địa điểm giao hàng"
+                    binding.tvOrderStatus.setTextColor(Color.WHITE)
+                    binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#2563EB"))
+                }
                 isOrderConfirmed || allItemsProcessed -> {
                     binding.tvOrderStatus.text = "Đã xác nhận"
                     binding.tvOrderStatus.setTextColor(Color.WHITE)
                     binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#16A34A"))
-                }
-                order.orderStatus.lowercase() in listOf("đang giao", "shipping") -> {
-                    binding.tvOrderStatus.text = "Đang giao"
-                    binding.tvOrderStatus.setTextColor(Color.WHITE)
-                    binding.tvOrderStatus.setBackgroundColor(Color.parseColor("#2563EB"))
                 }
                 else -> {
                     binding.tvOrderStatus.text = "Chờ xử lý"
@@ -164,13 +181,52 @@ class AdminOrderAdapter(
             binding.tvOrderItemsCount.text = "Số lượng: $calculatedQty | TT: ${order.paymentMethod}"
             binding.tvOrderTotal.text = "Tổng: ${formatter.format(if (calculatedTotal > 0 || allItemsRejected) calculatedTotal else order.totalPrice)} \u20ab"
 
-            if (isFinalState) {
+            if (isFinalState && !isOrderCancelled) {
                 binding.btnConfirmOrder.visibility = View.GONE
                 binding.btnCancelOrder.visibility = View.GONE
+            } else if (isFinalState) {
+                binding.btnConfirmOrder.visibility = View.GONE
+                binding.btnCancelOrder.visibility = View.GONE
+                binding.btnSellerArrived.visibility = View.GONE
+            } else if (isOrderConfirmed) {
+                binding.btnConfirmOrder.visibility = View.GONE
+                binding.btnCancelOrder.visibility = View.VISIBLE
             } else {
                 binding.btnConfirmOrder.visibility = View.VISIBLE
                 binding.btnCancelOrder.visibility = View.VISIBLE
                 binding.btnCancelOrder.text = "Hủy"
+            }
+
+            // Đặt nút ĐÃ ĐÃ NƠI SAU CÙNG để đảm bảo luôn hiển thị khi đơn đã xác nhận để kiểm tra thông báo
+            if (isOrderConfirmed && !isArrived && !isOrderCancelled) {
+                binding.btnSellerArrived.visibility = View.VISIBLE
+                binding.btnSellerArrived.text = "ĐÃ ĐẾN NƠI"
+            } else {
+                binding.btnSellerArrived.visibility = View.GONE
+            }
+
+            // HIỂN THỊ PHẦN LIÊN HỆ KHI ĐƠN HÀNG ĐANG CHỜ XÁC NHẬN / CHỜ XỬ LÝ
+            val isPending = statusLower in listOf("chờ xác nhận", "chờ xử lý", "pending", "processing") || statusLower.isEmpty()
+            val showContact = isPending && !isOrderCancelled
+
+            if (showContact) {
+                val buyerPhone = ship.phone.takeIf { !it.isBlank() } ?: "Chưa cập nhật"
+                val buyerName = ship.fullName.takeIf { !it.isBlank() } ?: "Khách hàng"
+                val buyerEmail = "Chưa cung cấp"
+
+                binding.layoutContactSection.visibility = View.VISIBLE
+                binding.tvContactTitle.text = "LIÊN HỆ NGƯỜI MUA"
+                binding.tvContactName.text = "Người mua: $buyerName"
+                binding.tvContactPhoneEmail.text = "SĐT: $buyerPhone | Địa chỉ: ${ship.local}"
+
+                binding.btnCallContact.setOnClickListener {
+                    ContactHelper.makePhoneCall(it.context, buyerPhone)
+                }
+                binding.btnEmailContact.setOnClickListener {
+                    ContactHelper.sendEmail(it.context, buyerEmail, "Đơn hàng #${order._id.take(6)}")
+                }
+            } else {
+                binding.layoutContactSection.visibility = View.GONE
             }
 
             // Hiển thị chi tiết từng sản phẩm trong đơn hàng
@@ -211,7 +267,19 @@ class AdminOrderAdapter(
                 }
 
                 subBinding.imgSubProduct.loadImageWithGlide(item.productImg, maxWidth = 150, maxHeight = 150)
-                
+                subBinding.root.setOnClickListener {
+                    val productModel = ProductModel(
+                        _id = item.productId,
+                        name = item.productName ?: "Sản phẩm",
+                        price = item.price,
+                        local = item.local,
+                        img = item.productImg ?: "",
+                        amount = item.quantity,
+                        author = item.authorId
+                    )
+                    onProductClick?.invoke(productModel)
+                }
+
                 val hideMenu = isFinalState || isItemConfirmed || isItemRejected
                 if (hideMenu) {
                     subBinding.ivSubItemMenu.visibility = View.GONE
@@ -248,6 +316,7 @@ class AdminOrderAdapter(
                     }
                 }
 
+                binding.layoutOrderItemsContainer.layoutParams
                 binding.layoutOrderItemsContainer.addView(subBinding.root)
             }
         }

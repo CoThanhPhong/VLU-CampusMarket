@@ -1,6 +1,7 @@
 package com.example.vlu_campusmarket.data.repository
 
 import com.example.vlu_campusmarket.data.local.dao.ProductDao
+import com.example.vlu_campusmarket.data.local.dao.UserDao
 import com.example.vlu_campusmarket.data.local.entity.ProductEntity
 import com.example.vlu_campusmarket.data.models.ProductModel
 import com.example.vlu_campusmarket.data.models.UserModel
@@ -9,6 +10,7 @@ import com.example.vlu_campusmarket.data.remote.response.ProductListResponse
 import com.example.vlu_campusmarket.data.remote.response.UserIdRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -16,7 +18,8 @@ import com.google.gson.Gson
 
 class ProductRepository(
     private val productDao: ProductDao,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val userDao: UserDao? = null
 ) {
 <<<<<<< HEAD
     // 1. Room (ProductEntity) -> ProductModel cho ViewModel
@@ -24,13 +27,22 @@ class ProductRepository(
 >>>>>>> features/optimize-leakCanary
     val localProducts: Flow<List<ProductModel>> = productDao.getAllProducts().map { entities ->
         entities.map { entity ->
+            val parsedImg: Any = if (entity.img.startsWith("[")) {
+                try {
+                    Gson().fromJson(entity.img, Array<String>::class.java).toList()
+                } catch (_: Exception) {
+                    entity.img
+                }
+            } else {
+                entity.img
+            }
             ProductModel(
                 _id = entity._id,
                 name = entity.name,
                 price = entity.price,
                 deviceType = entity.deviceType,
                 author = entity.author,
-                img = entity.img,
+                img = parsedImg,
                 description = entity.description,
                 amount = entity.amount,
                 local = entity.local,
@@ -113,7 +125,9 @@ class ProductRepository(
 
     suspend fun fetchFromRemoteAndSave(page: Int = 1): ProductListResponse? {
         return try {
-            val response = apiService.getAllProducts(page)
+            val user = userDao?.getLoggedInUser()?.firstOrNull()
+            val isAdmin = user?.role.equals("admin", ignoreCase = true)
+            val response = apiService.getAllProducts(page, isAdmin = if (isAdmin) "true" else "false")
             if (response.isSuccessful) {
                 val body = response.body()
                 val productList = body?.data ?: emptyList()
