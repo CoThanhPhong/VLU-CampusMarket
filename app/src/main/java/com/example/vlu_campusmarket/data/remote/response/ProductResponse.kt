@@ -9,12 +9,18 @@ data class ProductCreateResponse(
 )
 
 data class ProductListResponse(
+<<<<<<< HEAD
+    val count: Int = 0,
+    val success: Boolean = false,
+    val data: List<ProductModel>? = null
+=======
     val success: Boolean = true,
     val currentPage: Int = 1,
     val totalPages: Int = 1,
     val totalProducts: Int = 0,
     val count: Int = 0,
     val data: List<ProductModel> = emptyList()
+>>>>>>> features/optimize-leakCanary
 )
 
 data class ProductSingleResponse(

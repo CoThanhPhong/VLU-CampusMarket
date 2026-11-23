@@ -34,7 +34,7 @@ class HomeFragment : Fragment() {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = AppDatabase.getDatabase(requireContext())
                 val apiService = RetrofitClient.getInstance(requireContext())
-                val repository = ProductRepository(database.productDao(), apiService)
+                val repository = ProductRepository(database.productDao(), apiService, database.userDao())
 
                 @Suppress("UNCHECKED_CAST")
                 return ProductViewModel(repository) as T

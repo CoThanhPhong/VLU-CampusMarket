@@ -10,8 +10,17 @@ class SessionCookieJar(context: Context) : CookieJar {
     private val prefs = context.getSharedPreferences("vlu_cookie_store", Context.MODE_PRIVATE)
     private val cookieStore = ConcurrentHashMap<String, MutableList<Cookie>>()
 
+    @Synchronized
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
         if (cookies.isEmpty()) return
+<<<<<<< HEAD
+        val current = cookieStore.getOrPut(url.host) { mutableListOf() }
+        // Gộp theo tên cookie: cookie mới ghi đè cookie cũ cùng tên
+        cookies.forEach { newCookie ->
+            current.removeAll { it.name == newCookie.name }
+            current.add(newCookie)
+        }
+=======
 
         val host = url.host
         val existingCookies = cookieStore[host] ?: mutableListOf()
@@ -29,9 +38,18 @@ class SessionCookieJar(context: Context) : CookieJar {
         }
 
         cookieStore[host] = updatedCookies
+>>>>>>> features/optimize-leakCanary
     }
 
+    @Synchronized
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
+<<<<<<< HEAD
+        val now = System.currentTimeMillis()
+        val list = cookieStore[url.host] ?: return emptyList()
+        list.removeAll { it.expiresAt < now }
+        return list.toList()
+    }
+=======
         val host = url.host
         val now = System.currentTimeMillis()
         val existingCookies = cookieStore[host] ?: return emptyList()
@@ -66,4 +84,5 @@ class SessionCookieJar(context: Context) : CookieJar {
         cookieStore.clear()
         prefs.edit().clear().apply()
     }
+>>>>>>> features/optimize-leakCanary
 }

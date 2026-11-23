@@ -3,7 +3,9 @@ package com.example.vlu_campusmarket.ui.orders
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vlu_campusmarket.data.models.OrderModel
+import com.example.vlu_campusmarket.data.models.UserModel
 import com.example.vlu_campusmarket.data.repository.OrderRepository
+import com.example.vlu_campusmarket.utils.NotificationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,6 +26,10 @@ class OrderViewModel(private val orderRepository: OrderRepository) : ViewModel()
     private val _userNames = MutableStateFlow(mapOf<String, String>())
     val userNames: StateFlow<Map<String, String>> = _userNames.asStateFlow()
 
+    private val sellerCache = mutableMapOf<String, UserModel>()
+    private val _sellerDetails = MutableStateFlow(mapOf<String, UserModel>())
+    val sellerDetails: StateFlow<Map<String, UserModel>> = _sellerDetails.asStateFlow()
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
@@ -31,6 +37,8 @@ class OrderViewModel(private val orderRepository: OrderRepository) : ViewModel()
     val notificationEvent: SharedFlow<String> = _notificationEvent.asSharedFlow()
 
     private var previousConfirmedOrderIds = setOf<String>()
+    private var previousArrivedOrderIds = setOf<String>()
+    private var isFirstSync = true
 
     fun fetchUserNameIfNeeded(userId: String) {
         if (userId.isBlank() || userCache.containsKey(userId)) return
@@ -42,6 +50,8 @@ class OrderViewModel(private val orderRepository: OrderRepository) : ViewModel()
                 if (user != null) {
                     val authorName = user.profile?.name ?: "Sinh viên VLU"
                     userCache[userId] = authorName
+                    sellerCache[userId] = user
+                    _sellerDetails.value = sellerCache.toMap()
                 }
             } catch (e: Exception) {
                 userCache[userId] = "Sinh viên VLU"
@@ -71,11 +81,23 @@ class OrderViewModel(private val orderRepository: OrderRepository) : ViewModel()
                             .map { it._id }
                             .toSet()
 
+                        val currentArrivedIds = currentOrders
+                            .filter { it.orderStatus.equals("Đã đến địa điểm giao hàng", ignoreCase = true) || it.orderStatus.equals("SELLER_ARRIVED", ignoreCase = true) }
+                            .map { it._id }
+                            .toSet()
+
                         val brandNewConfirmed = currentConfirmedIds - previousConfirmedOrderIds
-                        if (brandNewConfirmed.isNotEmpty() && previousConfirmedOrderIds.isNotEmpty()) {
+                        if (brandNewConfirmed.isNotEmpty() && !isFirstSync) {
                             _notificationEvent.emit("🎉 Hóa đơn của bạn vừa được cửa hàng xác nhận thành công!")
                         }
                         previousConfirmedOrderIds = currentConfirmedIds
+
+                        val brandNewArrived = currentArrivedIds - previousArrivedOrderIds
+                        if (brandNewArrived.isNotEmpty() && !isFirstSync) {
+                            _notificationEvent.emit("📍 Người bán đã đến địa điểm giao hàng! Vui lòng kiểm tra.")
+                        }
+                        previousArrivedOrderIds = currentArrivedIds
+                        isFirstSync = false
                     }
                 } catch (e: Exception) {
                     // Ignored
@@ -94,6 +116,10 @@ class OrderViewModel(private val orderRepository: OrderRepository) : ViewModel()
                     _orders.value = list.sortedByDescending { it._id }
                     previousConfirmedOrderIds = list
                         .filter { it.orderStatus.equals("Đã xác nhận", ignoreCase = true) || it.orderStatus.equals("approved", ignoreCase = true) }
+                        .map { it._id }
+                        .toSet()
+                    previousArrivedOrderIds = list
+                        .filter { it.orderStatus.equals("Đã đến địa điểm giao hàng", ignoreCase = true) || it.orderStatus.equals("SELLER_ARRIVED", ignoreCase = true) }
                         .map { it._id }
                         .toSet()
                     _isRefreshing.value = false

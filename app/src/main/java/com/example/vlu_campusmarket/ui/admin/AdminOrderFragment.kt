@@ -14,9 +14,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.vlu_campusmarket.R
 import com.example.vlu_campusmarket.data.local.AppDatabase
+import com.example.vlu_campusmarket.data.models.ProductModel
 import com.example.vlu_campusmarket.data.remote.RetrofitClient
 import com.example.vlu_campusmarket.databinding.FragmentAdminOrderBinding
+import com.example.vlu_campusmarket.ui.product.ProductDetailFragment
+import com.example.vlu_campusmarket.utils.NotificationHelper
+import com.example.vlu_campusmarket.utils.SessionManager
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
@@ -33,9 +39,10 @@ class AdminOrderFragment : Fragment() {
                 val context = requireContext()
                 val db = AppDatabase.getDatabase(context)
                 val apiService = RetrofitClient.getInstance(context)
+                val sessionManager = SessionManager(context)
 
                 @Suppress("UNCHECKED_CAST")
-                return AdminViewModel(apiService, db.productDao()) as T
+                return AdminViewModel(apiService, db.productDao(), db.userDao(), sessionManager) as T
             }
         }
     }
@@ -67,6 +74,18 @@ class AdminOrderFragment : Fragment() {
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 }
             },
+            onSellerArrived = { orderId ->
+                viewModel.updateOrderStatus(orderId, "Đã đến địa điểm giao hàng") { success, msg ->
+                    Toast.makeText(requireContext(), if (success) "Đã thông báo đến địa điểm giao hàng!" else msg, Toast.LENGTH_SHORT).show()
+                    if (success) {
+                        NotificationHelper.showDeliveryNotification(
+                            requireContext(),
+                            "Người bán đã đến địa điểm giao hàng!",
+                            "Đơn hàng #${orderId.take(6)}: Người bán đã có mặt tại điểm giao hàng. Vui lòng liên hệ."
+                        )
+                    }
+                }
+            },
             onCancelOrder = { orderId ->
                 viewModel.updateOrderStatus(orderId, "Đã hủy") { _, msg ->
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
@@ -81,6 +100,59 @@ class AdminOrderFragment : Fragment() {
                     viewModel.rejectOrderItem(order._id, item.productId) { success, msg ->
                         Toast.makeText(requireContext(), if (success) "Đã từ chối sản phẩm" else msg, Toast.LENGTH_SHORT).show()
                     }
+                }
+            },
+            onProductClick = { product ->
+                if (product.safeId.isEmpty()) {
+                    Toast.makeText(requireContext(), "Sản phẩm không có mã hợp lệ!", Toast.LENGTH_SHORT).show()
+                    return@AdminOrderAdapter
+                }
+                lifecycleScope.launch {
+                    var prodToOpen: ProductModel? = null
+
+                    try {
+                        val apiService = RetrofitClient.getInstance(requireContext())
+                        val res = apiService.getProductById(product.safeId)
+                        if (res.isSuccessful && res.body()?.data != null) {
+                            prodToOpen = res.body()?.data
+                        }
+                    } catch (_: Exception) {}
+
+                    if (prodToOpen == null) {
+                        try {
+                            val db = AppDatabase.getDatabase(requireContext())
+                            val localEntity = db.productDao().getProductById(product.safeId)
+                            if (localEntity != null) {
+                                val rawImg: Any = if (localEntity.img.startsWith("[")) {
+                                    try {
+                                        Gson().fromJson(localEntity.img, Array<String>::class.java).toList()
+                                    } catch (_: Exception) { localEntity.img }
+                                } else localEntity.img
+
+                                prodToOpen = ProductModel(
+                                    _id = localEntity._id,
+                                    name = localEntity.name,
+                                    description = localEntity.description,
+                                    price = localEntity.price,
+                                    amount = localEntity.amount,
+                                    local = localEntity.local,
+                                    img = rawImg,
+                                    status = localEntity.status,
+                                    deviceType = localEntity.deviceType,
+                                    author = localEntity.author
+                                )
+                            }
+                        } catch (_: Exception) {}
+                    }
+
+                    if (prodToOpen == null) {
+                        prodToOpen = product
+                    }
+
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragmentOutlet, ProductDetailFragment.newInstance(prodToOpen))
+                        .addToBackStack(null)
+                        .commit()
                 }
             }
         )
