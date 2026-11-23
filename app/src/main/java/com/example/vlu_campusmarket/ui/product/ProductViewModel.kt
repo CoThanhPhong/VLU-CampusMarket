@@ -37,18 +37,19 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         _searchQuery
     ) { products, category, query ->
         products.filter { product ->
+            val dt = product.formattedDeviceType
             val matchCategory = if (category == "ALL") true else {
                 if (category.equals("Macbook", ignoreCase = true) || category.equals("Mac", ignoreCase = true)) {
-                    product.deviceType.contains("mac", ignoreCase = true)
+                    dt.contains("mac", ignoreCase = true)
                 } else {
-                    product.deviceType.equals(category, ignoreCase = true)
+                    dt.equals(category, ignoreCase = true)
                 }
             }
-            val matchQuery = product.name.contains(query, ignoreCase = true)
-            val statusLower = product.status?.trim()?.lowercase() ?: "chờ duyệt"
-            val isApproved = statusLower in listOf("còn hàng", "available", "approved", "đã duyệt")
-            val isAvailable = product.amount > 0 && isApproved
-            matchCategory && matchQuery && isAvailable
+            val matchQuery = (product.name ?: "").contains(query, ignoreCase = true)
+            val statusLower = product.status?.trim()?.lowercase() ?: ""
+            val isRejected = statusLower in listOf("bị từ chối", "rejected", "disabled", "hủy", "cancelled", "bị hủy")
+            val isApproved = !isRejected
+            matchCategory && matchQuery && isApproved
         }.sortedByDescending { it.safeId }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -77,7 +78,7 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
                             repository.fetchFromRemoteAndSave(page = p)
                         }
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Ignored
                 }
             }
@@ -134,7 +135,7 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
                     userCache[userId] = authorName
                     avatarCache[userId] = authorAvatar
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 userCache[userId] = "Sinh viên VLU"
                 avatarCache[userId] = ""
             }

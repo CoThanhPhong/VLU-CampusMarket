@@ -46,14 +46,16 @@ class OrderRepository(
                                 "author" to mapOf(
                                     "_id" to authorIdToUse,
                                     "profile" to mapOf("name" to (it.authorName ?: ""))
-                                )
+                                ),
+                                "status" to (it.status ?: "")
                             ),
                             quantity = it.quantity,
                             price = it.price,
-                            local = it.local
+                            local = it.local,
+                            status = it.status
                         ) 
                     },
-                    shippingInfo = ShippingInfoModel(entity.shippingInfo.fullName, entity.shippingInfo.phone, entity.shippingInfo.local),
+                    shippingInfo = ShippingInfoModel(entity.shippingInfo.fullName, entity.shippingInfo.phone, entity.shippingInfo.local, entity.shippingInfo.email ?: ""),
                     paymentMethod = entity.paymentMethod,
                     totalPrice = entity.totalPrice,
                     orderStatus = entity.orderStatus,
@@ -83,10 +85,11 @@ class OrderRepository(
                                 local = item.local,
                                 productName = item.productName ?: localProd?.name,
                                 productImg = item.productImg ?: localProd?.img,
-                                authorName = item.authorName
+                                authorName = item.authorName,
+                                status = item.currentStatus
                             ) 
                         },
-                        shippingInfo = Converters.EmbeddedShippingInfo(model.shippingInfo.fullName, model.shippingInfo.phone,model.shippingInfo.local),
+                        shippingInfo = Converters.EmbeddedShippingInfo(model.shippingInfo.fullName, model.shippingInfo.phone, model.shippingInfo.local, model.shippingInfo.email),
                         paymentMethod = model.paymentMethod,
                         totalPrice = model.totalPrice,
                         orderStatus = model.orderStatus,
@@ -133,7 +136,8 @@ class OrderRepository(
                                 local = it.local,
                                 productName = it.productName,
                                 productImg = it.productImg,
-                                authorName = it.authorName
+                                authorName = it.authorName,
+                                status = it.currentStatus
                             ) 
                         },
                         shippingInfo = Converters.EmbeddedShippingInfo(order.shippingInfo.fullName, order.shippingInfo.phone, order.shippingInfo.local),

@@ -69,7 +69,8 @@ class ProductAdapter(
             binding.tvProductName.text = product.name
             binding.tvProductPrice.text = "${formatter.format(product.price)} \u20ab"
             binding.tvDeviceType.text = product.formattedDeviceType
-            binding.tvProductLocal.text = if (product.local.startsWith("Cơ sở")) product.local else "Cơ sở: ${product.local}"
+            val localText = product.local ?: "Cơ sở 1"
+            binding.tvProductLocal.text = if (localText.startsWith("Cơ sở")) localText else "Cơ sở: $localText"
             binding.tvProductAmount.text = "Kho: ${product.amount}"
 
             binding.imgProduct.loadImageWithGlide(product.imageUrl, maxWidth = 350, maxHeight = 350)

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
+import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -140,7 +141,10 @@ class CartFragment : Fragment() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_checkout_shipping, null)
         val etFullName = dialogView.findViewById<EditText>(R.id.etFullName)
         val etPhone = dialogView.findViewById<EditText>(R.id.etPhone)
+        val etEmail = dialogView.findViewById<EditText>(R.id.etEmail)
         val actCampus = dialogView.findViewById<AutoCompleteTextView>(R.id.actCampus)
+        val rbBankTransfer = dialogView.findViewById<RadioButton>(R.id.rbBankTransfer)
+        val rbMomo = dialogView.findViewById<RadioButton>(R.id.rbMomo)
 
         val campuses = arrayOf("Cơ sở 1", "Cơ sở 2", "Cơ sở 3")
         val campusAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, campuses)
@@ -155,12 +159,15 @@ class CartFragment : Fragment() {
             if (etPhone != null && etPhone.text.isEmpty()) {
                 etPhone.setText(sessionUser.profile?.phone ?: "")
             }
+            if (etEmail != null && etEmail.text.isEmpty()) {
+                etEmail.setText(sessionUser.email)
+            }
         }
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Xác nhận Đặt hàng")
             .setView(dialogView)
-            .setPositiveButton("Thanh toán COD", null)
+            .setPositiveButton("Đặt hàng", null)
             .setNegativeButton("Hủy", null)
             .create()
 
@@ -169,23 +176,51 @@ class CartFragment : Fragment() {
             btnPositive.setOnClickListener {
                 val name = etFullName?.text?.toString()?.trim() ?: ""
                 val phone = etPhone?.text?.toString()?.trim() ?: ""
+                val email = etEmail?.text?.toString()?.trim() ?: ""
                 val campus = actCampus?.text?.toString()?.trim()?.ifEmpty { "Cơ sở 1" } ?: "Cơ sở 1"
+                val paymentMethod = when {
+                    rbMomo?.isChecked == true -> "MoMo"
+                    rbBankTransfer?.isChecked == true -> "Banking"
+                    else -> "COD"
+                }
 
                 if (name.isEmpty() || phone.isEmpty()) {
-                    Toast.makeText(requireContext(), "Vui lòng điền đầy đủ thông tin giao hàng", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Vui lòng điền đầy đủ họ tên và số điện thoại", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
 
                 val shippingInfo = ShippingInfoModel(
                     fullName = name,
                     phone = phone,
-                    local = campus
+                    local = campus,
+                    email = email
                 )
 
-                viewModel.checkout(shippingInfo, "COD") { _, message ->
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                if (paymentMethod == "Banking" || paymentMethod == "MoMo") {
+                    val title = if (paymentMethod == "Banking") "Thông tin Chuyển khoản Ngân hàng" else "Thông tin thanh toán MoMo"
+                    val msg = if (paymentMethod == "Banking") {
+                        "Quý khách vui lòng chuyển khoản theo thông tin sau:\n\n• Ngân hàng: MB Bank (Quân Đội)\n• Số tài khoản: 0389823108\n• Chủ tài khoản: VLU CAMPUS MARKET\n• Nội dung: TT DonHang [Số điện thoại]\n\nĐơn hàng sẽ được xử lý sau khi xác nhận thanh toán."
+                    } else {
+                        "Quý khách vui lòng chuyển tiền qua ví MoMo theo thông tin sau:\n\n• Số điện thoại MoMo: 0389823108\n• Chủ tài khoản: VLU CAMPUS MARKET\n• Nội dung: TT DonHang [Số điện thoại]\n\nĐơn hàng sẽ được xử lý sau khi xác nhận thanh toán."
+                    }
+
+                    AlertDialog.Builder(requireContext())
+                        .setTitle(title)
+                        .setMessage(msg)
+                        .setPositiveButton("Xác nhận đã thanh toán") { _, _ ->
+                            viewModel.checkout(shippingInfo, paymentMethod) { _, message ->
+                                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                            }
+                            dialog.dismiss()
+                        }
+                        .setNegativeButton("Quay lại", null)
+                        .show()
+                } else {
+                    viewModel.checkout(shippingInfo, paymentMethod) { _, message ->
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                    }
+                    dialog.dismiss()
                 }
-                dialog.dismiss()
             }
         }
 

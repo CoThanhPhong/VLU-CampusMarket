@@ -77,7 +77,7 @@ class ProductDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val item = product
-        if (item == null || item.safeId.isEmpty() || (item.price <= 0 && item.name.startsWith("Sản phẩm ("))) {
+        if (item == null || item.safeId.isEmpty()) {
             Toast.makeText(requireContext(), "Sản phẩm không tồn tại hoặc đã bị xóa!", Toast.LENGTH_SHORT).show()
             parentFragmentManager.popBackStack()
             return
@@ -271,7 +271,7 @@ class ProductDetailFragment : Fragment() {
                 try {
                     val apiService = RetrofitClient.getInstance(requireContext())
                     val db = AppDatabase.getDatabase(requireContext())
-                    val repository = ProductRepository(db.productDao(), apiService)
+                    val repository = ProductRepository(db.productDao(), apiService, db.userDao())
                     val user = repository.getUserDetail(item.authorId)
                     if (user != null) {
                         val name = user.profile?.name?.ifEmpty { "Sinh viên VLU" } ?: "Sinh viên VLU"
