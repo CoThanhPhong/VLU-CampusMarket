@@ -23,7 +23,7 @@ interface ApiService {
         @Body request: Map<String, String>
     ): Response<UserDetailResponse>
 
-    @PUT("auth/user/role")
+    @PUT("auth/user/update-role")
     suspend fun updateUserRole(
         @Body request: Map<String, String>
     ): Response<UserDetailResponse>
@@ -129,6 +129,11 @@ interface ApiService {
     @PUT("products/u")
     suspend fun updateProduct(
         @Body product: ProductModel
+    ): Response<ProductSingleResponse>
+
+    @PUT("products/update-status")
+    suspend fun updateProductStatus(
+        @Body request: Map<String, String>
     ): Response<ProductSingleResponse>
 
     @HTTP(method = "DELETE", path = "products/d", hasBody = true)

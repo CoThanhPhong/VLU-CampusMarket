@@ -106,12 +106,12 @@ class OrderViewModel(private val orderRepository: OrderRepository) : ViewModel()
         }
     }
 
-    fun refreshOrders() {
+    fun refreshOrders(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _isRefreshing.value = true
             val userId = orderRepository.getLoggedInUserId()
             if (userId != null) {
-                orderRepository.fetchRemoteOrders()
+                orderRepository.fetchRemoteOrders(forceRefresh = forceRefresh)
                 orderRepository.getOrdersLocal(userId).collect { list ->
                     _orders.value = list.sortedByDescending { it._id }
                     previousConfirmedOrderIds = list

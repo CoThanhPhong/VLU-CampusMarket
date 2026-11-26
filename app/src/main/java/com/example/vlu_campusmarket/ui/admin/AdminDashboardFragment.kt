@@ -63,6 +63,10 @@ class AdminDashboardFragment : Fragment() {
                 .commit()
         }
 
+        binding.swipeRefreshAdminDashboard.setOnRefreshListener {
+            viewModel.refreshAllData(forceRefresh = true)
+        }
+
         observeViewModel()
     }
 
@@ -79,6 +83,12 @@ class AdminDashboardFragment : Fragment() {
                 launch {
                     viewModel.allUsers.collect { users ->
                         binding.tvAdminUserCount.text = users.size.toString()
+                    }
+                }
+
+                launch {
+                    viewModel.isLoading.collect { loading ->
+                        binding.swipeRefreshAdminDashboard.isRefreshing = loading
                     }
                 }
             }

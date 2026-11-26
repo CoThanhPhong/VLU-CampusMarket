@@ -74,18 +74,6 @@ class AdminOrderFragment : Fragment() {
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                 }
             },
-            onSellerArrived = { orderId ->
-                viewModel.updateOrderStatus(orderId, "Đã đến địa điểm giao hàng") { success, msg ->
-                    Toast.makeText(requireContext(), if (success) "Đã thông báo đến địa điểm giao hàng!" else msg, Toast.LENGTH_SHORT).show()
-                    if (success) {
-                        NotificationHelper.showDeliveryNotification(
-                            requireContext(),
-                            "Người bán đã đến địa điểm giao hàng!",
-                            "Đơn hàng #${orderId.take(6)}: Người bán đã có mặt tại điểm giao hàng. Vui lòng liên hệ."
-                        )
-                    }
-                }
-            },
             onCancelOrder = { orderId ->
                 viewModel.updateOrderStatus(orderId, "Đã hủy") { _, msg ->
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()

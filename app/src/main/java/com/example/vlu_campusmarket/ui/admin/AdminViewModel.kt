@@ -105,6 +105,12 @@ class AdminViewModel(
     val notificationEvent: SharedFlow<String> = _notificationEvent.asSharedFlow()
 
     private var previousPendingOrderIds = setOf<String>()
+    private var lastAdminFetchTime: Long = 0L
+    private val CACHE_TIMEOUT_MS = 15 * 60 * 1000L
+
+    fun invalidateCache() {
+        lastAdminFetchTime = 0L
+    }
 
     init {
         observeLocalDatabase()
@@ -210,7 +216,11 @@ class AdminViewModel(
         }
     }
 
-    fun refreshAllData() {
+    fun refreshAllData(forceRefresh: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && (now - lastAdminFetchTime < CACHE_TIMEOUT_MS) && _allProducts.value.isNotEmpty()) {
+            return
+        }
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -276,6 +286,8 @@ class AdminViewModel(
                 if (userResponse.isSuccessful && userResponse.body()?.success == true) {
                     _allUsers.value = userResponse.body()?.data ?: emptyList()
                 }
+
+                lastAdminFetchTime = System.currentTimeMillis()
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -290,7 +302,8 @@ class AdminViewModel(
                 val response = apiService.deleteProduct(ProductIdRequest(productId))
                 if (response.isSuccessful) {
                     productDao.deleteProductById(productId)
-                    refreshAllData()
+                    invalidateCache()
+                    refreshAllData(forceRefresh = true)
                     onResult(true, "Đã xóa sản phẩm thành công")
                 } else {
                     onResult(false, "Không thể xóa sản phẩm này")
@@ -310,14 +323,39 @@ class AdminViewModel(
             _isLoading.value = true
             var successCount = 0
 
+            val backendStatus = if (newStatus.equals("Bị từ chối", ignoreCase = true) || newStatus.equals("REJECTED", ignoreCase = true)) {
+                "Bị từ chối"
+            } else {
+                "Đã duyệt"
+            }
+
             productIds.forEach { id ->
-                val response = apiService.updateProduct(ProductModel(_id = id, status = newStatus))
-                if (response.isSuccessful) {
-                    successCount++
+                val requestMap = mapOf(
+                    "productId" to id,
+                    "status" to backendStatus
+                )
+                try {
+                    val response = apiService.updateProductStatus(requestMap)
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        successCount++
+                        val localEntity = productDao.getProductById(id)
+                        if (localEntity != null) {
+                            val targetStatus = if (backendStatus == "Đã duyệt") "Còn hàng" else "Bị từ chối"
+                            productDao.insertProducts(listOf(localEntity.copy(status = targetStatus)))
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
-            refreshAllData()
-            onResult(true, "Đã cập nhật $successCount/${productIds.size} sản phẩm")
+
+            invalidateCache()
+            refreshAllData(forceRefresh = true)
+            if (successCount > 0) {
+                onResult(true, "Đã cập nhật $successCount/${productIds.size} sản phẩm")
+            } else {
+                onResult(false, "Cập nhật trạng thái sản phẩm thất bại")
+            }
         }
     }
 
@@ -336,7 +374,8 @@ class AdminViewModel(
                     successCount++
                 }
             }
-            refreshAllData()
+            invalidateCache()
+            refreshAllData(forceRefresh = true)
             onResult(true, "Đã xóa $successCount/${productIds.size} sản phẩm")
         }
     }
@@ -361,7 +400,8 @@ class AdminViewModel(
                 }
 
                 if (response.isSuccessful) {
-                    refreshAllData()
+                    invalidateCache()
+                    refreshAllData(forceRefresh = true)
                     onResult(true, "Đã cập nhật trạng thái đơn hàng")
                 } else {
                     onResult(false, "Cập nhật đơn hàng thất bại")
@@ -443,12 +483,40 @@ class AdminViewModel(
     fun updateProductDetails(product: ProductModel, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
+                // Đảm bảo giữ nguyên tác giả (author) ban đầu khi Admin sửa nội dung bài viết
+                val existing = _allProducts.value.find { it.safeId == product.safeId }
+                val authorToKeep = existing?.authorId?.ifEmpty { product.authorId } ?: product.authorId
+
                 val updatedProduct = product.copy(
-                    img = if (product.imageList.isNotEmpty()) product.imageList else product.imageUrl
+                    img = if (product.imageList.isNotEmpty()) product.imageList else product.imageUrl,
+                    author = authorToKeep
                 )
                 val response = apiService.updateProduct(updatedProduct)
                 if (response.isSuccessful) {
-                    refreshAllData()
+                    val updatedServerProduct = response.body()?.data
+                    val finalAuthor = updatedServerProduct?.authorId?.ifEmpty { authorToKeep } ?: authorToKeep
+
+                    val imgString = if (updatedProduct.imageList.isNotEmpty()) {
+                        Gson().toJson(updatedProduct.imageList)
+                    } else {
+                        updatedProduct.imageUrl
+                    }
+                    val entity = ProductEntity(
+                        _id = updatedProduct.safeId,
+                        name = updatedProduct.name,
+                        description = updatedProduct.description,
+                        price = updatedProduct.price,
+                        amount = updatedProduct.amount,
+                        local = updatedProduct.local,
+                        img = imgString,
+                        status = updatedProduct.status,
+                        deviceType = updatedProduct.deviceType,
+                        author = finalAuthor
+                    )
+                    productDao.insertProducts(listOf(entity))
+
+                    invalidateCache()
+                    refreshAllData(forceRefresh = true)
                     onResult(true, "Cập nhật sản phẩm thành công")
                 } else {
                     onResult(false, "Cập nhật sản phẩm thất bại")
@@ -462,7 +530,7 @@ class AdminViewModel(
     fun updateUserRole(userId: String, newRole: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
             try {
-                val request = mapOf("userId" to userId, "role" to newRole)
+                val request = mapOf("userId" to userId, "newRole" to newRole)
                 val response = apiService.updateUserRole(request)
                 if (response.isSuccessful) {
                     refreshAllData()
@@ -504,7 +572,7 @@ class AdminViewModel(
             _isLoading.value = true
             var successCount = 0
             userIds.forEach { id ->
-                val request = mapOf("userId" to id, "role" to newRole)
+                val request = mapOf("userId" to id, "newRole" to newRole)
                 val response = apiService.updateUserRole(request)
                 if (response.isSuccessful) {
                     successCount++

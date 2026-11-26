@@ -33,16 +33,24 @@ class ProfileViewModel(
     private val _userProducts = MutableStateFlow<List<ProductModel>>(emptyList())
     val userProducts: StateFlow<List<ProductModel>> = _userProducts.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     init {
         refreshProfileData()
     }
 
     fun refreshProfileData() {
         viewModelScope.launch {
-            if (!targetUserId.isNullOrEmpty()) {
-                loadUserById(targetUserId)
-            } else {
-                loadUser()
+            _isLoading.value = true
+            try {
+                if (!targetUserId.isNullOrEmpty()) {
+                    loadUserById(targetUserId)
+                } else {
+                    loadUser()
+                }
+            } finally {
+                _isLoading.value = false
             }
         }
     }

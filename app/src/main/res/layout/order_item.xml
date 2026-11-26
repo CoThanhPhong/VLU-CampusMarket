@@ -171,19 +171,6 @@
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSellerArrived"
-                android:layout_width="wrap_content"
-                android:layout_height="38dp"
-                android:text="ĐÃ ĐẾN NƠI"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                app:backgroundTint="#2563EB"
-                app:cornerRadius="8dp"
-                android:layout_marginEnd="4dp"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConfirmOrder"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
