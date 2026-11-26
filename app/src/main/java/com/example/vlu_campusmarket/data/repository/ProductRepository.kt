@@ -19,6 +19,14 @@ class ProductRepository(
     private val apiService: ApiService,
     private val userDao: UserDao? = null
 ) {
+    companion object {
+        private var lastProductFetchTime: Long = 0L
+        private const val CACHE_TIMEOUT_MS = 15 * 60 * 1000L // 15 phút quy tắc
+    }
+
+    fun invalidateCache() {
+        lastProductFetchTime = 0L
+    }
     val localProducts: Flow<List<ProductModel>> = productDao.getAllProducts().map { entities ->
         entities.map { entity ->
             val parsedImg: Any = if (entity.img.startsWith("[")) {
@@ -48,6 +56,7 @@ class ProductRepository(
     }
 
     suspend fun saveProductToLocal(model: ProductModel) {
+        invalidateCache()
         val imgString = if (model.imageList.isNotEmpty()) {
             Gson().toJson(model.imageList)
         } else {
@@ -76,7 +85,14 @@ class ProductRepository(
         }
     }
 
-    suspend fun fetchFromRemoteAndSave(page: Int = 1): ProductListResponse? {
+    suspend fun fetchFromRemoteAndSave(page: Int = 1, forceRefresh: Boolean = false): ProductListResponse? {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && page == 1 && (now - lastProductFetchTime < CACHE_TIMEOUT_MS)) {
+            val count = try { productDao.getProductCount() } catch (_: Exception) { 0 }
+            if (count > 0) {
+                return null // Tận dụng cache 15 phút, không gọi API trùng lặp
+            }
+        }
         return try {
             val user = userDao?.getLoggedInUser()?.firstOrNull()
             val isAdmin = user?.role.equals("admin", ignoreCase = true)
@@ -100,6 +116,7 @@ class ProductRepository(
                     )
                 }.distinctBy { it._id }
                 productDao.insertProducts(entities)
+                lastProductFetchTime = System.currentTimeMillis()
                 body
             } else {
                 null

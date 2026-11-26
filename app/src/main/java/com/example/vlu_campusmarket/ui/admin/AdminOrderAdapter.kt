@@ -20,7 +20,6 @@ import java.text.DecimalFormat
 class AdminOrderAdapter(
     private val onConfirmOrder: (String) -> Unit,
     private val onCancelOrder: (String) -> Unit,
-    private val onSellerArrived: (String) -> Unit,
     private val onSubItemAction: (OrderModel, OrderItemModel, String) -> Unit,
     private val onProductClick: ((ProductModel) -> Unit)? = null
 ) : ListAdapter<OrderModel, AdminOrderAdapter.AdminOrderViewHolder>(OrderDiffCallback()) {
@@ -48,14 +47,6 @@ class AdminOrderAdapter(
                         }
                     }
                     onConfirmOrder(order._id)
-                }
-            }
-
-            binding.btnSellerArrived.setOnClickListener {
-                val pos = bindingAdapterPosition
-                if (pos != RecyclerView.NO_POSITION) {
-                    val order = getItem(pos)
-                    onSellerArrived(order._id)
                 }
             }
 
@@ -181,13 +172,9 @@ class AdminOrderAdapter(
             binding.tvOrderItemsCount.text = "Số lượng: $calculatedQty | TT: ${order.paymentMethod}"
             binding.tvOrderTotal.text = "Tổng: ${formatter.format(if (calculatedTotal > 0 || allItemsRejected) calculatedTotal else order.totalPrice)} \u20ab"
 
-            if (isFinalState && !isOrderCancelled) {
+            if (isFinalState) {
                 binding.btnConfirmOrder.visibility = View.GONE
                 binding.btnCancelOrder.visibility = View.GONE
-            } else if (isFinalState) {
-                binding.btnConfirmOrder.visibility = View.GONE
-                binding.btnCancelOrder.visibility = View.GONE
-                binding.btnSellerArrived.visibility = View.GONE
             } else if (isOrderConfirmed) {
                 binding.btnConfirmOrder.visibility = View.GONE
                 binding.btnCancelOrder.visibility = View.VISIBLE
@@ -195,14 +182,6 @@ class AdminOrderAdapter(
                 binding.btnConfirmOrder.visibility = View.VISIBLE
                 binding.btnCancelOrder.visibility = View.VISIBLE
                 binding.btnCancelOrder.text = "Hủy"
-            }
-
-            // Đặt nút ĐÃ ĐÃ NƠI SAU CÙNG để đảm bảo luôn hiển thị khi đơn đã xác nhận để kiểm tra thông báo
-            if (isOrderConfirmed && !isArrived && !isOrderCancelled) {
-                binding.btnSellerArrived.visibility = View.VISIBLE
-                binding.btnSellerArrived.text = "ĐÃ ĐẾN NƠI"
-            } else {
-                binding.btnSellerArrived.visibility = View.GONE
             }
 
             // HIỂN THỊ PHẦN LIÊN HỆ KHI ĐƠN HÀNG ĐANG CHỜ XÁC NHẬN / CHỜ XỬ LÝ

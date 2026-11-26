@@ -23,6 +23,14 @@ class OrderRepository(
     private val userDao: UserDao,
     private val productDao: ProductDao? = null
 ) {
+    companion object {
+        private var lastOrderFetchTime: Long = 0L
+        private const val CACHE_TIMEOUT_MS = 15 * 60 * 1000L
+    }
+
+    fun invalidateCache() {
+        lastOrderFetchTime = 0L
+    }
 
     suspend fun getLoggedInUserId(): String? {
         return userDao.getLoggedInUser().firstOrNull()?.id
@@ -66,7 +74,17 @@ class OrderRepository(
         }
     }
 
-    suspend fun fetchRemoteOrders(): Boolean {
+    suspend fun fetchRemoteOrders(forceRefresh: Boolean = false): Boolean {
+        val now = System.currentTimeMillis()
+        if (!forceRefresh && (now - lastOrderFetchTime < CACHE_TIMEOUT_MS)) {
+            val userId = getLoggedInUserId()
+            if (userId != null) {
+                val localCount = try { orderDao.getOrderCount(userId) } catch (_: Exception) { 0 }
+                if (localCount > 0) {
+                    return true
+                }
+            }
+        }
         return try {
             val userId = getLoggedInUserId() ?: return false
             val response = apiService.getMyOrders()
@@ -97,6 +115,7 @@ class OrderRepository(
                     )
                     orderDao.insertOrder(entity)
                 }
+                lastOrderFetchTime = System.currentTimeMillis()
                 true
             } else {
                 false
@@ -113,6 +132,7 @@ class OrderRepository(
         paymentMethod: String,
         totalPrice: Double
     ): Boolean {
+        invalidateCache()
         return try {
             val userId = getLoggedInUserId() ?: return false
             val request = CreateOrderRequest(
@@ -159,6 +179,7 @@ class OrderRepository(
     }
 
     suspend fun cancelOrder(orderId: String): Boolean {
+        invalidateCache()
         return try {
             val response = apiService.cancelOrder(CancelOrderRequest(orderId))
             if (response.isSuccessful && response.body()?.success == true) {

@@ -128,6 +128,10 @@ class ProfileFragment : Fragment() {
             binding.btnEditAvatarBadge.visibility = View.GONE
         }
 
+        binding.swipeRefreshProfile.setOnRefreshListener {
+            viewModel.refreshProfileData()
+        }
+
         observeViewModel()
     }
 
@@ -260,6 +264,12 @@ class ProfileFragment : Fragment() {
                     viewModel.userProducts.collect { products ->
                         productAdapter.submitList(products)
                         binding.tvMyProductsTitle.text = "Sản phẩm của tôi (${products.size})"
+                    }
+                }
+
+                launch {
+                    viewModel.isLoading.collect { loading ->
+                        binding.swipeRefreshProfile.isRefreshing = loading
                     }
                 }
             }

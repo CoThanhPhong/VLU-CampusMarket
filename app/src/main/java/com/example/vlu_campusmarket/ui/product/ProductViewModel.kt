@@ -47,8 +47,9 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
             }
             val matchQuery = (product.name ?: "").contains(query, ignoreCase = true)
             val statusLower = product.status?.trim()?.lowercase() ?: ""
+            val isPending = statusLower.isEmpty() || statusLower in listOf("pending", "chờ duyệt", "cho duyiet", "chờ xử lý")
             val isRejected = statusLower in listOf("bị từ chối", "rejected", "disabled", "hủy", "cancelled", "bị hủy")
-            val isApproved = !isRejected
+            val isApproved = !isPending && !isRejected
             matchCategory && matchQuery && isApproved
         }.sortedByDescending { it.safeId }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -70,12 +71,12 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     private fun startRealtimeProductSync() {
         viewModelScope.launch(Dispatchers.IO) {
             while (true) {
-                delay(10000) // Tự động đồng bộ sản phẩm mới từ server MongoDB mỗi 10s
+                delay(30000) // Tự động đồng bộ mỗi 30s với quy tắc kiểm tra cache 15 phút
                 try {
-                    val res = repository.fetchFromRemoteAndSave(page = 1)
+                    val res = repository.fetchFromRemoteAndSave(page = 1, forceRefresh = false)
                     if (res != null && res.totalPages > 1) {
                         for (p in 2..minOf(res.totalPages, 10)) {
-                            repository.fetchFromRemoteAndSave(page = p)
+                            repository.fetchFromRemoteAndSave(page = p, forceRefresh = false)
                         }
                     }
                 } catch (_: Exception) {
@@ -85,17 +86,17 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         }
     }
 
-    fun refreshData() {
+    fun refreshData(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _isRefreshing.value = true
             currentPage = 1
-            val result = repository.fetchFromRemoteAndSave(page = 1)
+            val result = repository.fetchFromRemoteAndSave(page = 1, forceRefresh = forceRefresh)
             if (result != null) {
                 currentPage = result.currentPage
                 totalPages = result.totalPages
                 var p = 2
                 while (p <= totalPages && p <= 20) {
-                    val pageRes = repository.fetchFromRemoteAndSave(page = p)
+                    val pageRes = repository.fetchFromRemoteAndSave(page = p, forceRefresh = forceRefresh)
                     if (pageRes == null || pageRes.data.isEmpty()) {
                         break
                     }

@@ -15,6 +15,9 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE _id = :id LIMIT 1")
     suspend fun getProductById(id: String): ProductEntity?
 
+    @Query("SELECT COUNT(*) FROM products")
+    suspend fun getProductCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProducts(products: List<ProductEntity>)
 

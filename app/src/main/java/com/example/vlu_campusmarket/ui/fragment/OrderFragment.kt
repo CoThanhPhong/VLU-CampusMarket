@@ -157,7 +157,7 @@ class OrderFragment : Fragment() {
 
     private fun setupListeners() {
         binding.swipeRefreshOrders.setOnRefreshListener {
-            viewModel.refreshOrders()
+            viewModel.refreshOrders(forceRefresh = true)
         }
     }
 

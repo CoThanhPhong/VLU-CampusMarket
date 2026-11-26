@@ -63,7 +63,7 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         (activity as? AppCompatActivity)?.supportActionBar?.title = "Trang chủ"
-        viewModel.refreshData()
+        viewModel.refreshData(forceRefresh = false)
     }
 
     private fun setupRecyclerView() {
@@ -105,7 +105,7 @@ class HomeFragment : Fragment() {
 
     private fun setupListeners() {
         binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.refreshData()
+            viewModel.refreshData(forceRefresh = true)
         }
 
         binding.btnSearch.setOnClickListener {

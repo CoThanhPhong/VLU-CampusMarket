@@ -50,7 +50,6 @@ class OrderAdapter(
         fun bind(order: OrderModel) {
             binding.layoutOrderItemsContainer.removeAllViews()
             binding.btnConfirmOrder.visibility = View.GONE
-            binding.btnSellerArrived.visibility = View.GONE
             binding.layoutContactSection.visibility = View.GONE // Chỉ người bán liên hệ người mua
             binding.tvOrderId.text = "Mã đơn: #${order._id.take(8)}"
 

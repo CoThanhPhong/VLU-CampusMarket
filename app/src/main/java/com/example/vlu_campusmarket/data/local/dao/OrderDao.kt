@@ -12,6 +12,9 @@ interface OrderDao {
     @Query("SELECT * FROM orders WHERE userId = :userId ORDER BY rowid DESC")
     fun getOrders(userId: String): Flow<List<OrderEntity>>
 
+    @Query("SELECT COUNT(*) FROM orders WHERE userId = :userId")
+    suspend fun getOrderCount(userId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrder(order: OrderEntity)
 }
